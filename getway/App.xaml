@@ -4,6 +4,7 @@
              xmlns:local="clr-namespace:getway"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
+        <FontFamily x:Key="iconfont">/Assets/Font/iconfont.ttf#iconfont</FontFamily>
          
     </Application.Resources>
 </Application>
