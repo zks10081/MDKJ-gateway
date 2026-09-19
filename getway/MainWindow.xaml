@@ -1,0 +1,258 @@
+﻿<Window
+    x:Class="getway.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="clr-namespace:getway"
+    xmlns:view="clr-namespace:getway.View"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    Title="GetWay"
+    Width="1000"
+    Height="600"
+    WindowStartupLocation="CenterScreen"
+    mc:Ignorable="d">
+    <WindowChrome.WindowChrome>
+        <WindowChrome NonClientFrameEdges="None" UseAeroCaptionButtons="False" />
+    </WindowChrome.WindowChrome>
+    <Window.Background>
+        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Offset="0" Color="#072748" />
+            <GradientStop Offset="0.5" Color="#0c3e6e" />
+        </LinearGradientBrush>
+    </Window.Background>
+    <Window.Resources>
+        <view:FirstView x:Key="fv"/>
+        <view:DeviceView x:Key="dv"/>
+        <view:TrendView x:Key="tv"/>
+        <view:AlarmView x:Key="av"/>
+        <view:ConfigView x:Key="cv"/>
+
+        <Style x:Key="ExitButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="80" />
+            <Setter Property="Height" Value="30" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="Margin" Value="10,0" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid>
+                            <Border
+                                Name="border"
+                                Width="10"
+                                HorizontalAlignment="Right"
+                                Background="Orange"
+                                CornerRadius="0,5,5,0" />
+                            <Polygon
+                                Name="polygon"
+                                Margin="0,0,10,0"
+                                Fill="Orange"
+                                Points="0,33  80,33  80,0  15,0"
+                                Stretch="Fill" />
+                            <StackPanel
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Orientation="Horizontal">
+                                <TextBlock
+                                    Margin="5,0"
+                                    VerticalAlignment="Center"
+                                    FontFamily="/Assets/Font/iconfont.ttf#iconfont"
+                                    FontSize="18"
+                                    Text="&#xe654;" />
+                                <TextBlock
+                                    VerticalAlignment="Center"
+                                    FontSize="14"
+                                    Text="退出" />
+                            </StackPanel>
+                        </Grid>
+
+                        <!--  触发器  -->
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#CCFFA500" />
+                                <Setter TargetName="polygon" Property="Fill" Value="#CCFFA500" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="SettingButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="100" />
+            <Setter Property="Height" Value="30" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="Margin" Value="10,0" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid>
+                            <Polygon
+                                Name="polygon"
+                                Margin="0,0,10,0"
+                                Points="0,0  0,33  85,33  100,0"
+                                Stretch="Fill">
+                                <Polygon.Fill>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                        <GradientStop Offset="0" Color="#00FFA500" />
+                                        <GradientStop Offset="0.7" Color="#99FFA500" />
+                                    </LinearGradientBrush>
+                                </Polygon.Fill>
+                            </Polygon>
+                            <StackPanel
+                                HorizontalAlignment="Left"
+                                VerticalAlignment="Center"
+                                Orientation="Horizontal">
+                                <TextBlock
+                                    Margin="20,0,5,0"
+                                    VerticalAlignment="Center"
+                                    FontFamily="/Assets/Font/iconfont.ttf#iconfont"
+                                    FontSize="18"
+                                    Text="&#xe626;" />
+                                <TextBlock
+                                    VerticalAlignment="Center"
+                                    FontSize="14"
+                                    Text="设置" />
+                            </StackPanel>
+                        </Grid>
+
+                        <!--  触发器  -->
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="polygon" Property="Fill">
+                                    <Setter.Value>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                            <GradientStop Offset="0" Color="#00FFA500" />
+                                            <GradientStop Offset="0.7" Color="#55FFA500" />
+                                        </LinearGradientBrush>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="RadioButton" x:Key="NavRadiButton">
+            <Setter Property="Foreground" Value="#5FFF"/>
+            <Setter Property="Margin" Value="0,5"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border Name="border" Background="Transparent" BorderBrush="Transparent" BorderThickness="3,0,0,0">
+                            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                <TextBlock Text="{TemplateBinding Tag}" 
+                                           HorizontalAlignment="Center"
+                                           FontFamily="/Assets/Font/iconfont.ttf#iconfont"
+                                           FontSize="24"
+                                           Margin="0,3"/>
+                                <ContentPresenter HorizontalAlignment="Center" TextBlock.FontSize="11"/>
+                            </StackPanel>
+                        </Border>
+
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="border" Property="BorderBrush" Value="Orange"/>
+                                <Setter Property="Foreground" Value="White"/>
+                                <Setter TargetName="border" Property="Background">
+                                    <Setter.Value>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                            <GradientStop Color="#5FFF" Offset="0"/>
+                                            <GradientStop Color="Transparent" Offset="1"/>
+                                        </LinearGradientBrush>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="80" />
+            <RowDefinition />
+            <RowDefinition Height="20" />
+        </Grid.RowDefinitions>
+
+        <!--  标题栏  -->
+        <Image
+            Height="35"
+            Margin="20,0"
+            HorizontalAlignment="Left"
+            Source="/Assets/Image/logo.png" />
+        <StackPanel
+            Margin="70,0"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Center">
+            <TextBlock
+                FontFamily="FZYaoTi"
+                FontSize="18"
+                Foreground="White"
+                Text="浙江达名科技-网关系统" />
+        </StackPanel>
+        <Button
+            HorizontalAlignment="Right"
+            VerticalAlignment="Center"
+            Content="退出"
+            Style="{StaticResource ExitButtonStyle}" />
+        <Button
+            Margin="80,0"
+            HorizontalAlignment="Right"
+            VerticalAlignment="Center"
+            Content="设置"
+            Style="{StaticResource SettingButtonStyle}" />
+
+        <!--  内容区域  -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="60" />
+                <ColumnDefinition />
+            </Grid.ColumnDefinitions>
+            
+            <!--导航按钮背景-->
+            <!--  M0 0 50 22 C60 26 60 27 60 29 L60 310 60 313 55 315 L0 335  -->
+            <!--Data="M 0,0            L 55,20            L 55,30            L 55,300            L 0,335            Z"-->
+            <Path
+                Data="M0 0 55 20 C60 22 60 25 60 30 L60 305 C60 310 60 313 55 315 L0 335"
+                Margin="0,40"
+                Fill="#2000"
+                Stretch="Fill">
+                <Path.Stroke>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                        <GradientStop Color="Transparent" Offset="0"/>
+                        <GradientStop Color="Orange" Offset="0.4"/>
+                        <GradientStop Color="Orange" Offset="0.6"/>
+                        <GradientStop Color="Transparent" Offset="1"/>
+                    </LinearGradientBrush>
+                </Path.Stroke>
+            </Path>
+
+            <StackPanel VerticalAlignment="Center">
+                <RadioButton Content="首页" Tag="&#xe655;"  Style="{StaticResource NavRadiButton}" IsChecked="True"
+                             Command="{Binding NavCommand}" CommandParameter="{StaticResource fv}"/>
+                <RadioButton Content="设备" Tag="&#xe830;" Style="{StaticResource NavRadiButton}"
+                             Command="{Binding NavCommand}" CommandParameter="{StaticResource dv}"/>
+                <RadioButton Content="趋势" Tag="&#xe655;" Style="{StaticResource NavRadiButton}"
+                             Command="{Binding NavCommand}" CommandParameter="{StaticResource tv}"/>
+                <RadioButton Content="报警" Tag="&#xe62b;" Style="{StaticResource NavRadiButton}"
+                             Command="{Binding NavCommand}" CommandParameter="{StaticResource av}"/>
+                <RadioButton Content="配置" Tag="&#xe856;" Style="{StaticResource NavRadiButton}"
+                             Command="{Binding NavCommand}" CommandParameter="{StaticResource cv}"/>
+            </StackPanel>
+
+            <ContentControl Grid.Column="1" Content="{Binding pageContent,TargetNullValue={StaticResource fv}}">
+                
+            </ContentControl>
+
+        </Grid>
+
+        <!--  导航栏  -->
+    </Grid>
+
+
+</Window>
