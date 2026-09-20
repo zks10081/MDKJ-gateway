@@ -1,0 +1,3 @@
+添加插件
+npgsql
+system.text.json

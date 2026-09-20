@@ -6,9 +6,10 @@
     xmlns:local="clr-namespace:getway"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     Title="登录"
-    Width="300"
-    Height="300"
+    Width="400"
+    Height="350"
     WindowStyle="None"
+    WindowStartupLocation="CenterScreen"
     mc:Ignorable="d">
     <Window.Background>
         <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
@@ -16,6 +17,8 @@
             <GradientStop Offset="0.5" Color="#0c3e6e" />
         </LinearGradientBrush>
     </Window.Background>
+
+
 
     <Window.Resources>
         <Style x:Key="BanButton" TargetType="Button">
@@ -25,6 +28,26 @@
             <Setter Property="Width" Value="46" />
             <Setter Property="Height" Value="30" />
             <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                          VerticalAlignment="Center" />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#19FFFFFF" />
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Background" Value="#33FFFFFF" />
+                </Trigger>
+            </Style.Triggers>
         </Style>
 
         <Style
@@ -41,8 +64,126 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
+
+        <Style x:Key="inputStyle" TargetType="TextBox">
+            <Setter Property="Height" Value="18" />
+            <Setter Property="Width" Value="150" />
+            <Setter Property="VerticalAlignment" Value="Bottom" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Foreground" Value="AliceBlue" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Grid>
+                            <Border
+                                Name="Border"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="Gray"
+                                BorderThickness="0,0,0,1">
+                                <ScrollViewer x:Name="PART_ContentHost" />
+                            </Border>
+                            <Border
+                                Name="FocusedBorder"
+                                Background="Transparent"
+                                BorderBrush=" #95783B"
+                                BorderThickness="0,0,0,1"
+                                Visibility="Collapsed" />
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsFocused" Value="True">
+                                <Setter TargetName="Border" Property="BorderBrush" Value="Transparent" />
+                                <Setter TargetName="FocusedBorder" Property="Visibility" Value="Visible" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+
+        </Style>
+        <Style x:Key="PasswordText" TargetType="TextBox">
+            <Setter Property="TextDecorations">
+                <Setter.Value>
+                    <TextDecorationCollection>
+                        <TextDecoration>
+                            <TextDecoration.Pen>
+                                <Pen
+                                Brush="AliceBlue"
+                                DashCap="Round"
+                                EndLineCap="Round"
+                                StartLineCap="Round"
+                                Thickness="10">
+                                    <Pen.DashStyle>
+                                        <DashStyle Dashes="0.0,1.2" Offset="0.6" />
+                                    </Pen.DashStyle>
+                                </Pen>
+                            </TextDecoration.Pen>
+                            <TextDecoration.Location>
+                                <TextDecorationLocation>Strikethrough</TextDecorationLocation>
+                            </TextDecoration.Location>
+                        </TextDecoration>
+                    </TextDecorationCollection>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="Height" Value="18" />
+            <Setter Property="Width" Value="150" />
+            <Setter Property="Background" Value="#FF484D5E" />
+            <Setter Property="Foreground" Value="Transparent" />
+            <Setter Property="FontSize" Value="20" />
+            <Setter Property="FontFamily" Value="Courier New" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Grid>
+                            <Border
+                            Name="Border"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="Gray"
+                            BorderThickness="0,0,0,1">
+                                <ScrollViewer x:Name="PART_ContentHost" />
+                            </Border>
+                            <Border
+                            Name="FocusedBorder"
+                            Background="Transparent"
+                            BorderBrush=" #95783B"
+                            BorderThickness="0,0,0,1"
+                            Visibility="Collapsed" />
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsFocused" Value="True">
+                                <Setter TargetName="Border" Property="BorderBrush" Value="Transparent" />
+                                <Setter TargetName="FocusedBorder" Property="Visibility" Value="Visible" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!--<Style x:Key="ButtonStyle" TargetType="Button">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate>
+                        <Border CornerRadius="5"
+                            Width="200"
+                            Height="40"
+                            Background="{TemplateBinding Background}">
+
+                            <ContentPresenter HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        Content="{TemplateBinding Content}" />
+                            --><!-- 属性要写在这里面 --><!--
+
+                        </Border>
+
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>-->
+
     </Window.Resources>
 
+    
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="30" />
@@ -50,20 +191,97 @@
         </Grid.RowDefinitions>
 
         <Grid>
+            <TextBlock Text="登录" VerticalAlignment="Center" Foreground="White" Margin="15,0"/>
             <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
-                <Button Content="&#xe629;" Style="{StaticResource BanButton}" />
-                <Button Content="&#xe654;" Style="{StaticResource CloseButton}" />
+                <Button Content="&#xe629;" Style="{StaticResource BanButton}" 
+                            Click="MinimizeButton_Click"
+                            ToolTip="最小化"/>
+                <Button Content="&#xe654;" Style="{StaticResource CloseButton}" 
+                            Click="CloseButton_Click"
+                        ToolTip="关闭"/>
             </StackPanel>
         </Grid>
 
         <Grid Grid.Row="1">
             <Grid.RowDefinitions>
-                <RowDefinition />
-                <RowDefinition />
+                <RowDefinition Height="1*"/>
+                <RowDefinition Height="2*"/>
             </Grid.RowDefinitions>
 
-            <StackPanel />
+            <TextBlock Text="登录" FontSize="30" 
+                       FontFamily="{StaticResource tihei}"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       Foreground="AliceBlue"/>
 
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition/>
+                    <ColumnDefinition Width="300"/>
+                    <ColumnDefinition/>
+                </Grid.ColumnDefinitions>
+                <Grid Grid.Column="1">
+                    <StackPanel>
+                        <Grid Margin="5,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="100" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Margin="10,0,0,0" FontSize="15" Foreground="AliceBlue" Text="用户名："/>
+                            <Grid Grid.Column="1" HorizontalAlignment="Left">
+                                <TextBox
+                                    x:Name="txtUser"
+                                    Foreground="AliceBlue"
+                                    GotKeyboardFocus="txtUser_GotKeyboardFocus"
+                                    Style="{StaticResource inputStyle}"
+                                    Text="{Binding Username}" />
+                            </Grid>
+                        </Grid>
+                        <Grid Margin="5,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="100" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Margin="10,0,0,0" FontSize="15" Foreground="AliceBlue" Text="密码："/>
+                            <Grid Grid.Column="1" HorizontalAlignment="Left">
+                            <TextBox 
+                                x:Name="password"
+                                Background="Transparent"
+                                GotKeyboardFocus="password_GotKeyboardFocus"
+                                Style="{StaticResource PasswordText}"
+                                Padding="0"
+                                Text="{Binding Password}"/>
+                            </Grid>
+                        </Grid>
+                        <Grid Margin="5,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="100" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Margin="10,0,0,0" FontSize="15" Foreground="AliceBlue" Text="IP："/>
+                                <Grid Grid.Column="1" HorizontalAlignment="Left">
+                                    <TextBox
+                                x:Name="ip"
+                                Foreground="AliceBlue"
+                                GotKeyboardFocus="ip_GotKeyboardFocus"
+                                Style="{StaticResource inputStyle}"
+                                Text="{Binding IP}" />
+                            </Grid>
+                        </Grid>
+
+                        <CheckBox Content="是否保存登录信息" FontSize="12" Foreground="AliceBlue" Margin="10,10,0,0" IsChecked="{Binding IsSave}"/>
+
+
+
+                        <Button Content="登录" 
+                                Margin="0,20,0,0" 
+                                FontSize="12" 
+                                Foreground="AliceBlue" 
+                                Background="Orange" 
+                                Command="{Binding LoginCommand}"/>
+                    </StackPanel>
+                </Grid>
+            </Grid>
         </Grid>
 
 
