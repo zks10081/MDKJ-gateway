@@ -4,11 +4,11 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="clr-namespace:getway"
-    xmlns:view="clr-namespace:getway.View"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:view="clr-namespace:getway.View"
     Title="GetWay"
-    Width="1000"
-    Height="600"
+    Width="1500"
+    Height="930"
     WindowStartupLocation="CenterScreen"
     mc:Ignorable="d">
     <WindowChrome.WindowChrome>
@@ -21,11 +21,12 @@
         </LinearGradientBrush>
     </Window.Background>
     <Window.Resources>
-        <view:FirstView x:Key="fv"/>
-        <view:DeviceView x:Key="dv"/>
-        <view:TrendView x:Key="tv"/>
-        <view:AlarmView x:Key="av"/>
-        <view:ConfigView x:Key="cv"/>
+        <view:FirstView x:Key="fv" />
+        <view:DeviceView x:Key="dv" />
+        <view:TrendView x:Key="tv" />
+        <view:AlarmView x:Key="av" />
+        <view:ConfigView x:Key="cv" />
+        <view:GetWayView x:Key="gv" />
 
         <Style x:Key="ExitButtonStyle" TargetType="Button">
             <Setter Property="Width" Value="80" />
@@ -55,7 +56,7 @@
                                 <TextBlock
                                     Margin="5,0"
                                     VerticalAlignment="Center"
-                                    FontFamily="/Assets/Font/iconfont.ttf#iconfont"
+                                    FontFamily="{StaticResource iconfont}"
                                     FontSize="18"
                                     Text="&#xe654;" />
                                 <TextBlock
@@ -106,7 +107,7 @@
                                 <TextBlock
                                     Margin="20,0,5,0"
                                     VerticalAlignment="Center"
-                                    FontFamily="/Assets/Font/iconfont.ttf#iconfont"
+                                    FontFamily="{StaticResource iconfont}"
                                     FontSize="18"
                                     Text="&#xe626;" />
                                 <TextBlock
@@ -135,32 +136,37 @@
             </Setter>
         </Style>
 
-        <Style TargetType="RadioButton" x:Key="NavRadiButton">
-            <Setter Property="Foreground" Value="#5FFF"/>
-            <Setter Property="Margin" Value="0,5"/>
+        <Style x:Key="NavRadiButton" TargetType="RadioButton">
+            <Setter Property="Foreground" Value="#5FFF" />
+            <Setter Property="Margin" Value="0,5" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="RadioButton">
-                        <Border Name="border" Background="Transparent" BorderBrush="Transparent" BorderThickness="3,0,0,0">
-                            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                                <TextBlock Text="{TemplateBinding Tag}" 
-                                           HorizontalAlignment="Center"
-                                           FontFamily="/Assets/Font/iconfont.ttf#iconfont"
-                                           FontSize="24"
-                                           Margin="0,3"/>
-                                <ContentPresenter HorizontalAlignment="Center" TextBlock.FontSize="11"/>
+                        <Border
+                            Name="border"
+                            Background="Transparent"
+                            BorderBrush="Transparent"
+                            BorderThickness="3,0,0,0">
+                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <TextBlock
+                                    Margin="0,3"
+                                    HorizontalAlignment="Center"
+                                    FontFamily="{StaticResource iconfont}"
+                                    FontSize="24"
+                                    Text="{TemplateBinding Tag}" />
+                                <ContentPresenter HorizontalAlignment="Center" TextBlock.FontSize="11" />
                             </StackPanel>
                         </Border>
 
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="border" Property="BorderBrush" Value="Orange"/>
-                                <Setter Property="Foreground" Value="White"/>
+                                <Setter TargetName="border" Property="BorderBrush" Value="Orange" />
+                                <Setter Property="Foreground" Value="White" />
                                 <Setter TargetName="border" Property="Background">
                                     <Setter.Value>
                                         <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                            <GradientStop Color="#5FFF" Offset="0"/>
-                                            <GradientStop Color="Transparent" Offset="1"/>
+                                            <GradientStop Offset="0" Color="#5FFF" />
+                                            <GradientStop Offset="1" Color="Transparent" />
                                         </LinearGradientBrush>
                                     </Setter.Value>
                                 </Setter>
@@ -213,41 +219,66 @@
                 <ColumnDefinition Width="60" />
                 <ColumnDefinition />
             </Grid.ColumnDefinitions>
-            
-            <!--导航按钮背景-->
+
+            <!--  导航按钮背景  -->
             <!--  M0 0 50 22 C60 26 60 27 60 29 L60 310 60 313 55 315 L0 335  -->
-            <!--Data="M 0,0            L 55,20            L 55,30            L 55,300            L 0,335            Z"-->
+            <!--  Data="M 0,0            L 55,20            L 55,30            L 55,300            L 0,335            Z"  -->
             <Path
-                Data="M0 0 55 20 C60 22 60 25 60 30 L60 305 C60 310 60 313 55 315 L0 335"
                 Margin="0,40"
+                Data="M0 0 55 20 C60 22 60 25 60 30 L60 305 C60 310 60 313 55 315 L0 335"
                 Fill="#2000"
                 Stretch="Fill">
                 <Path.Stroke>
                     <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                        <GradientStop Color="Transparent" Offset="0"/>
-                        <GradientStop Color="Orange" Offset="0.4"/>
-                        <GradientStop Color="Orange" Offset="0.6"/>
-                        <GradientStop Color="Transparent" Offset="1"/>
+                        <GradientStop Offset="0" Color="Transparent" />
+                        <GradientStop Offset="0.4" Color="Orange" />
+                        <GradientStop Offset="0.6" Color="Orange" />
+                        <GradientStop Offset="1" Color="Transparent" />
                     </LinearGradientBrush>
                 </Path.Stroke>
             </Path>
 
             <StackPanel VerticalAlignment="Center">
-                <RadioButton Content="首页" Tag="&#xe655;"  Style="{StaticResource NavRadiButton}" IsChecked="True"
-                             Command="{Binding NavCommand}" CommandParameter="{StaticResource fv}"/>
-                <RadioButton Content="设备" Tag="&#xe830;" Style="{StaticResource NavRadiButton}"
-                             Command="{Binding NavCommand}" CommandParameter="{StaticResource dv}"/>
-                <RadioButton Content="趋势" Tag="&#xe655;" Style="{StaticResource NavRadiButton}"
-                             Command="{Binding NavCommand}" CommandParameter="{StaticResource tv}"/>
-                <RadioButton Content="报警" Tag="&#xe62b;" Style="{StaticResource NavRadiButton}"
-                             Command="{Binding NavCommand}" CommandParameter="{StaticResource av}"/>
-                <RadioButton Content="配置" Tag="&#xe856;" Style="{StaticResource NavRadiButton}"
-                             Command="{Binding NavCommand}" CommandParameter="{StaticResource cv}"/>
+                <RadioButton
+                    Command="{Binding NavCommand}"
+                    CommandParameter="{StaticResource fv}"
+                    Content="首页"
+                    IsChecked="True"
+                    Style="{StaticResource NavRadiButton}"
+                    Tag="&#xe655;" />
+                <RadioButton
+                    Command="{Binding NavCommand}"
+                    CommandParameter="{StaticResource dv}"
+                    Content="设备"
+                    Style="{StaticResource NavRadiButton}"
+                    Tag="&#xe830;" />
+                <RadioButton
+                    Command="{Binding NavCommand}"
+                    CommandParameter="{StaticResource tv}"
+                    Content="趋势"
+                    Style="{StaticResource NavRadiButton}"
+                    Tag="&#xe655;" />
+                <RadioButton
+                    Command="{Binding NavCommand}"
+                    CommandParameter="{StaticResource av}"
+                    Content="报警"
+                    Style="{StaticResource NavRadiButton}"
+                    Tag="&#xe62b;" />
+                <RadioButton
+                    Command="{Binding NavCommand}"
+                    CommandParameter="{StaticResource cv}"
+                    Content="配置"
+                    Style="{StaticResource NavRadiButton}"
+                    Tag="&#xe856;" />
+                <RadioButton
+                    Command="{Binding NavCommand}"
+                    CommandParameter="{StaticResource gv}"
+                    Content="网关"
+                    Style="{StaticResource NavRadiButton}"
+                    Tag="&#xe698;" />
             </StackPanel>
 
-            <ContentControl Grid.Column="1" Content="{Binding pageContent,TargetNullValue={StaticResource fv}}">
-                
-            </ContentControl>
+            <ContentControl Grid.Column="1" Content="{Binding PageContent, TargetNullValue={StaticResource fv}}" />
 
         </Grid>
 

@@ -1,0 +1,108 @@
+﻿<UserControl
+    x:Class="getway.View.GetWayView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="clr-namespace:getway.View"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    d:DesignHeight="450"
+    d:DesignWidth="800"
+    mc:Ignorable="d">
+    <UserControl.Resources>
+        <local:IpcItemView x:Key="ipc" />
+    </UserControl.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="40" />
+            <RowDefinition />
+        </Grid.RowDefinitions>
+        <Grid>
+            <Border HorizontalAlignment="Center" VerticalAlignment="Center">
+
+                <TextBlock
+                    Name="Title"
+                    FontFamily="tihei"
+                    FontSize="24"
+                    FontWeight="Bold"
+                    Foreground="#FFFFFF"
+                    Text="语音网关管理系统" />
+            </Border>
+        </Grid>
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="150" />
+                <ColumnDefinition />
+                <ColumnDefinition Width="120" />
+            </Grid.ColumnDefinitions>
+
+            <!--  网关ip列表  -->
+            <Grid Grid.Column="0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="20" />
+                    <RowDefinition />
+                </Grid.RowDefinitions>
+                <Border
+                    Width="150"
+                    Height="20"
+                    VerticalAlignment="Top"
+                    Background="#005788"
+                    CornerRadius="5">
+                    <StackPanel
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Orientation="Horizontal">
+                        <TextBlock
+                            Margin="5,0"
+                            FontFamily="{StaticResource iconfont}"
+                            Foreground="White"
+                            Text="&#xe64f;" />
+                        <TextBlock
+                            Margin="0,0,10,0"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontSize="9"
+                            Foreground="White"
+                            Text="网关列表" />
+                    </StackPanel>
+                </Border>
+                <Grid Grid.Row="1">
+                    <Border
+                        Width="150"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Top"
+                        CornerRadius="5">
+                        <ListBox
+                            d:ItemsSource="{d:SampleData ItemCount=5}"
+                            Background="#005788"
+                            ItemsSource="{Binding GetWayList}">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
+                                        <TextBlock
+                                            Margin="0,5,5,0"
+                                            FontFamily="{StaticResource iconfont}"
+                                            Foreground="White"
+                                            Text="&#xe67d;" />
+                                        <TextBlock
+                                            FontFamily="{StaticResource tihei}"
+                                            Foreground="White"
+                                            Text="192.168.2.222" />
+                                        <!--  Text="{Binding ip}"  -->
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </Border>
+                </Grid>
+
+            </Grid>
+
+            <!--  ipc电话内容  -->
+            <ContentControl Grid.Column="1" Content="{StaticResource ipc}" />
+
+
+            <!--  操作控制  -->
+
+        </Grid>
+    </Grid>
+</UserControl>

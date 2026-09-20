@@ -5,6 +5,7 @@
              StartupUri="MainWindow.xaml">
     <Application.Resources>
         <FontFamily x:Key="iconfont">/Assets/Font/iconfont.ttf#iconfont</FontFamily>
+        <FontFamily x:Key="tihei">/Assets/Font/YouSheBiaoTiHei.ttf#YouSheBiaoTiHei</FontFamily>
          
     </Application.Resources>
 </Application>

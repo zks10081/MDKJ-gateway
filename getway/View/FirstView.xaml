@@ -1,40 +1,103 @@
-﻿<UserControl x:Class="getway.View.FirstView"
-             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:local="clr-namespace:getway.View"
-             xmlns:c="clr-namespace:getway.Controls"
-             mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800">
+﻿<UserControl
+    x:Class="getway.View.FirstView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:c="clr-namespace:getway.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="clr-namespace:getway.View"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    d:DesignHeight="450"
+    d:DesignWidth="800"
+    mc:Ignorable="d">
     <UserControl.Resources>
-        <ControlTemplate TargetType="ToggleButton" x:Key="StartButtonTemp">
-            <Border Background="#2eaced" CornerRadius="10">
-                <StackPanel>
-
+        <ControlTemplate x:Key="StartButtonTemp" TargetType="ToggleButton">
+            <Border
+                Name="border"
+                Background="#2eaced"
+                CornerRadius="10">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock
+                        Name="icon"
+                        Margin="0,0,0,3"
+                        HorizontalAlignment="Center"
+                        FontFamily="{StaticResource iconfont}"
+                        FontSize="30"
+                        Foreground="White"
+                        Text="&#xe61c;" />
+                    <TextBlock
+                        Name="text"
+                        Margin="0,2,0,5"
+                        FontSize="11"
+                        Foreground="White"
+                        Text="启动监听" />
                 </StackPanel>
             </Border>
+            <ControlTemplate.Triggers>
+                <Trigger Property="IsChecked" Value="True">
+                    <Setter TargetName="border" Property="Background" Value="Orange" />
+                    <Setter TargetName="icon" Property="Text" Value="&#xe61c;" />
+                    <Setter TargetName="text" Property="Text" Value="停止监听" />
+                </Trigger>
+            </ControlTemplate.Triggers>
         </ControlTemplate>
     </UserControl.Resources>
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="90"/>
-            <RowDefinition/>
-            <RowDefinition Height=" 160"/>
+            <RowDefinition Height="90" />
+            <RowDefinition />
+            <RowDefinition Height=" 160" />
         </Grid.RowDefinitions>
 
         <Grid.ColumnDefinitions>
-            <ColumnDefinition/>
-            <ColumnDefinition Width="250"/>
+            <ColumnDefinition />
+            <ColumnDefinition Width="250" />
         </Grid.ColumnDefinitions>
-            
-        <!--第一块区域-->
+
+        <!--  第一块区域  -->
         <UniformGrid Rows="1">
-            <ToggleButton Width="70" Height="70">
-                
-            </ToggleButton>
-            <!--<c:ProgressRing Width="70" Height="70"/>-->
+            <ToggleButton
+                Width="70"
+                Height="70"
+                IsChecked="True"
+                Template="{StaticResource StartButtonTemp}" />
+            <c:ProgressRing
+                Title="智能"
+                Width="70"
+                Height="70"
+                ForeColor="Orange"
+                Value="70" />
+            <c:ProgressRing
+                Title="应用"
+                Width="70"
+                Height="70"
+                ForeColor="Blue"
+                Value="36" />
+            <c:ProgressRing
+                Title="应用"
+                Width="70"
+                Height="70"
+                ForeColor="Blue"
+                Value="36" />
+            <c:ProgressRing
+                Title="应用"
+                Width="70"
+                Height="70"
+                ForeColor="Blue"
+                Value="36" />
+            <c:ProgressRing
+                Title="应用"
+                Width="70"
+                Height="70"
+                ForeColor="Blue"
+                Value="36" />
+            <c:ProgressRing
+                Title="应用"
+                Width="70"
+                Height="70"
+                ForeColor="Blue"
+                Value="36" />
         </UniformGrid>
-        
+
+
     </Grid>
 </UserControl>

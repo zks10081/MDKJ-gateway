@@ -1,10 +1,5 @@
 ﻿using getway.Base;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Input;
 
 namespace getway.ViewModel
@@ -13,20 +8,21 @@ namespace getway.ViewModel
     {
         public event PropertyChangedEventHandler? PropertyChanged;
 
-        public object pageContent {  get; set; }
+        public object PageContent { get; set; }
 
         //命令属性
         public ICommand NavCommand { get; set; }
 
-        public MainVlewModel() {
-            NavCommand = new Command(doNavPage);
+        public MainVlewModel()
+        {
+            NavCommand = new Command(DoNavPage);
         }
 
 
-        private void doNavPage(object paramter)
+        private void DoNavPage(object paramter)
         {
-            pageContent = paramter;
-            PropertyChanged?.Invoke(this,new PropertyChangedEventArgs("pageContent"));
+            PageContent = paramter;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("PageContent"));
         }
     }
 }
