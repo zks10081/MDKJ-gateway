@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.IO;
-using System.Text.Json;
+﻿using System.IO;
 
 namespace getway.Util
 {
@@ -26,5 +20,33 @@ namespace getway.Util
 
         // 配置文件保存在当前运行目录下
         public static string ConfigPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "config.json");
+
+
+
+
+
+    }
+
+    public enum GatewayUIState
+    {
+        Loading,      // 连接中
+        Online,       // 在线
+        Timeout,      // 超时
+        Offline       // 离线
+    }
+
+    enum Verbs
+    {
+        WILL = 251,
+        WONT = 252,
+        DO = 253,
+        DONT = 254,
+        IAC = 255
+    }
+
+    enum Options
+    {
+        RD = 1,
+        SGA = 3
     }
 }

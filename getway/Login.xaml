@@ -8,8 +8,8 @@
     Title="登录"
     Width="400"
     Height="350"
-    WindowStyle="None"
     WindowStartupLocation="CenterScreen"
+    WindowStyle="None"
     mc:Ignorable="d">
     <Window.Background>
         <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
@@ -31,11 +31,11 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}"
+                        <Border
+                            Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}">
-                            <ContentPresenter HorizontalAlignment="Center"
-                                          VerticalAlignment="Center" />
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                     </ControlTemplate>
                 </Setter.Value>
@@ -108,11 +108,11 @@
                         <TextDecoration>
                             <TextDecoration.Pen>
                                 <Pen
-                                Brush="AliceBlue"
-                                DashCap="Round"
-                                EndLineCap="Round"
-                                StartLineCap="Round"
-                                Thickness="10">
+                                    Brush="AliceBlue"
+                                    DashCap="Round"
+                                    EndLineCap="Round"
+                                    StartLineCap="Round"
+                                    Thickness="10">
                                     <Pen.DashStyle>
                                         <DashStyle Dashes="0.0,1.2" Offset="0.6" />
                                     </Pen.DashStyle>
@@ -136,18 +136,18 @@
                     <ControlTemplate TargetType="TextBox">
                         <Grid>
                             <Border
-                            Name="Border"
-                            Background="{TemplateBinding Background}"
-                            BorderBrush="Gray"
-                            BorderThickness="0,0,0,1">
+                                Name="Border"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="Gray"
+                                BorderThickness="0,0,0,1">
                                 <ScrollViewer x:Name="PART_ContentHost" />
                             </Border>
                             <Border
-                            Name="FocusedBorder"
-                            Background="Transparent"
-                            BorderBrush=" #95783B"
-                            BorderThickness="0,0,0,1"
-                            Visibility="Collapsed" />
+                                Name="FocusedBorder"
+                                Background="Transparent"
+                                BorderBrush=" #95783B"
+                                BorderThickness="0,0,0,1"
+                                Visibility="Collapsed" />
                         </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsFocused" Value="True">
@@ -172,7 +172,9 @@
                             <ContentPresenter HorizontalAlignment="Center"
                                         VerticalAlignment="Center"
                                         Content="{TemplateBinding Content}" />
-                            --><!-- 属性要写在这里面 --><!--
+        -->
+        <!--  属性要写在这里面  -->
+        <!--
 
                         </Border>
 
@@ -183,7 +185,7 @@
 
     </Window.Resources>
 
-    
+
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="30" />
@@ -191,34 +193,44 @@
         </Grid.RowDefinitions>
 
         <Grid>
-            <TextBlock Text="登录" VerticalAlignment="Center" Foreground="White" Margin="15,0"/>
+            <TextBlock
+                Margin="15,0"
+                VerticalAlignment="Center"
+                Foreground="White"
+                Text="登录" />
             <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
-                <Button Content="&#xe629;" Style="{StaticResource BanButton}" 
-                            Click="MinimizeButton_Click"
-                            ToolTip="最小化"/>
-                <Button Content="&#xe654;" Style="{StaticResource CloseButton}" 
-                            Click="CloseButton_Click"
-                        ToolTip="关闭"/>
+                <Button
+                    Click="MinimizeButton_Click"
+                    Content="&#xe629;"
+                    Style="{StaticResource BanButton}"
+                    ToolTip="最小化" />
+                <Button
+                    Click="CloseButton_Click"
+                    Content="&#xe654;"
+                    Style="{StaticResource CloseButton}"
+                    ToolTip="关闭" />
             </StackPanel>
         </Grid>
 
         <Grid Grid.Row="1">
             <Grid.RowDefinitions>
-                <RowDefinition Height="1*"/>
-                <RowDefinition Height="2*"/>
+                <RowDefinition Height="1*" />
+                <RowDefinition Height="2*" />
             </Grid.RowDefinitions>
 
-            <TextBlock Text="登录" FontSize="30" 
-                       FontFamily="{StaticResource tihei}"
-                       HorizontalAlignment="Center"
-                       VerticalAlignment="Center"
-                       Foreground="AliceBlue"/>
+            <TextBlock
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                FontFamily="{StaticResource tihei}"
+                FontSize="30"
+                Foreground="AliceBlue"
+                Text="登录" />
 
             <Grid Grid.Row="1">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition/>
-                    <ColumnDefinition Width="300"/>
-                    <ColumnDefinition/>
+                    <ColumnDefinition />
+                    <ColumnDefinition Width="300" />
+                    <ColumnDefinition />
                 </Grid.ColumnDefinitions>
                 <Grid Grid.Column="1">
                     <StackPanel>
@@ -227,7 +239,11 @@
                                 <ColumnDefinition Width="100" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Margin="10,0,0,0" FontSize="15" Foreground="AliceBlue" Text="用户名："/>
+                            <TextBlock
+                                Margin="10,0,0,0"
+                                FontSize="15"
+                                Foreground="AliceBlue"
+                                Text="用户名：" />
                             <Grid Grid.Column="1" HorizontalAlignment="Left">
                                 <TextBox
                                     x:Name="txtUser"
@@ -242,15 +258,19 @@
                                 <ColumnDefinition Width="100" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Margin="10,0,0,0" FontSize="15" Foreground="AliceBlue" Text="密码："/>
+                            <TextBlock
+                                Margin="10,0,0,0"
+                                FontSize="15"
+                                Foreground="AliceBlue"
+                                Text="密码：" />
                             <Grid Grid.Column="1" HorizontalAlignment="Left">
-                            <TextBox 
-                                x:Name="password"
-                                Background="Transparent"
-                                GotKeyboardFocus="password_GotKeyboardFocus"
-                                Style="{StaticResource PasswordText}"
-                                Padding="0"
-                                Text="{Binding Password}"/>
+                                <TextBox
+                                    x:Name="password"
+                                    Padding="0"
+                                    Background="Transparent"
+                                    GotKeyboardFocus="password_GotKeyboardFocus"
+                                    Style="{StaticResource PasswordText}"
+                                    Text="{Binding Password}" />
                             </Grid>
                         </Grid>
                         <Grid Margin="5,10">
@@ -258,27 +278,37 @@
                                 <ColumnDefinition Width="100" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Margin="10,0,0,0" FontSize="15" Foreground="AliceBlue" Text="IP："/>
-                                <Grid Grid.Column="1" HorizontalAlignment="Left">
-                                    <TextBox
-                                x:Name="ip"
+                            <TextBlock
+                                Margin="10,0,0,0"
+                                FontSize="15"
                                 Foreground="AliceBlue"
-                                GotKeyboardFocus="ip_GotKeyboardFocus"
-                                Style="{StaticResource inputStyle}"
-                                Text="{Binding IP}" />
+                                Text="IP：" />
+                            <Grid Grid.Column="1" HorizontalAlignment="Left">
+                                <TextBox
+                                    x:Name="ip"
+                                    Foreground="AliceBlue"
+                                    GotKeyboardFocus="ip_GotKeyboardFocus"
+                                    Style="{StaticResource inputStyle}"
+                                    Text="{Binding IP}" />
                             </Grid>
                         </Grid>
 
-                        <CheckBox Content="是否保存登录信息" FontSize="12" Foreground="AliceBlue" Margin="10,10,0,0" IsChecked="{Binding IsSave}"/>
+                        <CheckBox
+                            Margin="10,10,0,0"
+                            Content="是否保存登录信息"
+                            FontSize="12"
+                            Foreground="AliceBlue"
+                            IsChecked="{Binding IsSave}" />
 
 
 
-                        <Button Content="登录" 
-                                Margin="0,20,0,0" 
-                                FontSize="12" 
-                                Foreground="AliceBlue" 
-                                Background="Orange" 
-                                Command="{Binding LoginCommand}"/>
+                        <Button
+                            Margin="0,20,0,0"
+                            Background="Orange"
+                            Command="{Binding LoginCommand}"
+                            Content="登录"
+                            FontSize="12"
+                            Foreground="AliceBlue" />
                     </StackPanel>
                 </Grid>
             </Grid>

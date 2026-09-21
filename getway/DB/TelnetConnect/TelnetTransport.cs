@@ -1,7 +1,7 @@
 ﻿using System.Net.Sockets;
 using System.Text;
 
-namespace getway.DB
+namespace getway.DB.TelnetConnect
 {
     class TelnetTransport
     {

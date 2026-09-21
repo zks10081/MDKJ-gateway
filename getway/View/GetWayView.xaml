@@ -10,6 +10,48 @@
     mc:Ignorable="d">
     <UserControl.Resources>
         <local:IpcItemView x:Key="ipc" />
+
+        <Style x:Key="ButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="80" />
+            <Setter Property="Height" Value="30" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="Margin" Value="10,10" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid>
+                            <Border
+                                Name="border"
+                                Width="80"
+                                HorizontalAlignment="Left"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="5" />
+                            <StackPanel
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Orientation="Horizontal">
+                                <TextBlock
+                                    Margin="5,0"
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource iconfont}"
+                                    FontSize="18"
+                                    Text="{TemplateBinding Tag}" />
+                                <ContentPresenter HorizontalAlignment="Center" TextBlock.FontSize="11" />
+                            </StackPanel>
+                        </Grid>
+
+                        <!--  触发器  -->
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#CCFFA500" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
     </UserControl.Resources>
     <Grid>
         <Grid.RowDefinitions>
@@ -32,7 +74,7 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="150" />
                 <ColumnDefinition />
-                <ColumnDefinition Width="120" />
+                <ColumnDefinition Width="150" />
             </Grid.ColumnDefinitions>
 
             <!--  网关ip列表  -->
@@ -102,6 +144,67 @@
 
 
             <!--  操作控制  -->
+            <Grid Grid.Column="2">
+                <Grid.RowDefinitions>
+                    <RowDefinition />
+                    <RowDefinition Height="200" />
+                </Grid.RowDefinitions>
+                <Border
+                    Grid.Row="0"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Top">
+                    <StackPanel>
+                        <Button
+                            Background="AliceBlue"
+                            Command="{Binding AddConnectCommand}"
+                            Content="连接"
+                            Foreground="Black"
+                            Style="{StaticResource ButtonStyle}"
+                            Tag="&#xe626;" />
+                        <Button
+                            Background="AliceBlue"
+                            Command="{Binding QueryBoardCommand}"
+                            Content="查询板子"
+                            Foreground="Black"
+                            Style="{StaticResource ButtonStyle}"
+                            Tag="&#xe626;" />
+                        <Button
+                            Background="AliceBlue"
+                            Command="{Binding QuerySIPUserCommand}"
+                            Content="查询sip用户"
+                            Foreground="Black"
+                            Style="{StaticResource ButtonStyle}"
+                            Tag="&#xe626;" />
+                        <Grid>
+                            <StackPanel>
+                                <TextBox Width="150" Height="40" />
+                                <Button
+                                    Background="AliceBlue"
+                                    Command="{Binding QueryCommand}"
+                                    Content="执行命令"
+                                    Foreground="Black"
+                                    Style="{StaticResource ButtonStyle}"
+                                    Tag="&#xe626;" />
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <Border
+                    Grid.Row="1"
+                    Margin="2"
+                    Padding="5"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Top"
+                    BorderBrush="Black"
+                    BorderThickness="1"
+                    CornerRadius="5">
+                    <TextBlock
+                        Width="120"
+                        Height="200"
+                        Text="{Binding ReadContent}" />
+                </Border>
+            </Grid>
 
         </Grid>
     </Grid>

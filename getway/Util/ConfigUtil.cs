@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using getway.Model;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
-using getway.Model;
 
 namespace getway.Util
 {
@@ -31,6 +26,7 @@ namespace getway.Util
             }
             return new LoginModel(); // 如果没有配置文件，返回一个空对象
         }
+
 
     }
 }

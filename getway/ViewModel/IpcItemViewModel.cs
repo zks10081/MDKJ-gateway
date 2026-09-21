@@ -20,7 +20,7 @@ namespace getway.ViewModel
         {
             for (int i = 0; i < 64; i++)
             {
-                IpcUserList.Add(new IpcUserModel() { name = Convert.ToString(8002 + i), state = "0" });
+                IpcUserList.Add(new IpcUserModel() { Name = Convert.ToString(8002 + i), State = "0", FSP = "" });
             }
         }
 
