@@ -1,5 +1,6 @@
-﻿using getway.ViewModel;
+using getway.ViewModel;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 
 namespace getway
@@ -9,11 +10,16 @@ namespace getway
     /// </summary>
     public partial class Login : Window
     {
+        private LoginViewModel ViewModel => (LoginViewModel)DataContext;
+
         public Login()
         {
             InitializeComponent();
-            this.DataContext = new LoginViewModel();
+            DataContext = new LoginViewModel();
 
+            // PasswordBox 不支持绑定，手工与 ViewModel.Password 同步
+            pwdBox.Password = ViewModel.Password ?? string.Empty;
+            pwdBox.PasswordChanged += (_, _) => ViewModel.Password = pwdBox.Password;
         }
 
         /// <summary>
@@ -21,7 +27,6 @@ namespace getway
         /// </summary>
         private void MinimizeButton_Click(object sender, RoutedEventArgs e)
         {
-            //this.WindowState = WindowState.Minimized;
             SystemCommands.MinimizeWindow(this);
         }
 
@@ -33,19 +38,17 @@ namespace getway
             Application.Current.Shutdown();
         }
 
-        private void txtUser_GotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+        private void Input_GotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
         {
-            txtUser.CaretIndex = txtUser.Text.Length;
-        }
-
-        private void password_GotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
-        {
-            password.CaretIndex = password.Text.Length;
-        }
-
-        private void ip_GotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
-        {
-            ip.CaretIndex = ip.Text.Length;
+            switch (sender)
+            {
+                case TextBox textBox:
+                    textBox.SelectAll();
+                    break;
+                case PasswordBox passwordBox:
+                    passwordBox.SelectAll();
+                    break;
+            }
         }
     }
 }

@@ -1,108 +1,137 @@
-﻿<UserControl
+<UserControl
     x:Class="getway.View.IpcItemView"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="clr-namespace:getway.View"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    d:DesignHeight="450"
-    d:DesignWidth="800"
+    d:DesignHeight="744"
+    d:DesignWidth="936"
     mc:Ignorable="d">
 
     <UserControl.Resources>
+        <!--  状态胶囊：背景画在 Border 上，才会真正显示成色块  -->
         <Style x:Key="ItemStatus" TargetType="Button">
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border CornerRadius="10">
+                        <Border
+                            Name="StatusBorder"
+                            Margin="0,3,0,0"
+                            Padding="5,1"
+                            Background="#9E9E9E"
+                            CornerRadius="7">
                             <TextBlock
                                 Name="StatusText"
-                                HorizontalAlignment="Center"
-                                FontSize="8"
+                                FontSize="10"
                                 Foreground="White"
                                 Text="● 离线" />
                         </Border>
                         <ControlTemplate.Triggers>
-                            <!--  离线：灰色  -->
                             <DataTrigger Binding="{Binding IsOnline}" Value="0">
-                                <Setter TargetName="StatusText" Property="Background" Value="#4CAF50" />
+                                <Setter TargetName="StatusBorder" Property="Background" Value="#4CAF50" />
                                 <Setter TargetName="StatusText" Property="Text" Value="● 在线" />
                             </DataTrigger>
-                            <!--  离线：灰色  -->
                             <DataTrigger Binding="{Binding IsOnline}" Value="1">
-                                <Setter TargetName="StatusText" Property="Background" Value="#9E9E9E" />
-                                <Setter TargetName="StatusText" Property="Text" Value="● 在线" />
+                                <Setter TargetName="StatusBorder" Property="Background" Value="#9E9E9E" />
+                                <Setter TargetName="StatusText" Property="Text" Value="● 离线" />
                             </DataTrigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <Style TargetType="Border" x:Key="borderStyle">
+        </Style>
     </UserControl.Resources>
+
     <Grid>
-        <Border Padding="5" CornerRadius="5">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition />
-                    <RowDefinition Height="30" />
-                </Grid.RowDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="12*" />
+            <RowDefinition Height="10" />
+            <RowDefinition />
+        </Grid.RowDefinitions>
 
-                <ItemsControl
-                    Grid.Row="0"
-                    d:ItemsSource="{d:SampleData ItemCount=64}"
-                    ItemsSource="{Binding IpcUserList}">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <UniformGrid Columns="8" />
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
+    <!--  WrapPanel + ItemWidth/ItemHeight：列数随中间栏宽度自动增减，纵向滚动  -->
+    <ScrollViewer
+        Grid.Row="0"
+        HorizontalScrollBarVisibility="Disabled"
+        VerticalScrollBarVisibility="Auto">
+        <ItemsControl
+            Margin="6"
+            d:ItemsSource="{d:SampleData ItemCount=64}"
+            ItemsSource="{Binding IpcUserList}">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <WrapPanel ItemHeight="112" ItemWidth="112" />
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
 
-                    <ItemsControl.ItemTemplate>
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <Grid
+                        Width="104"
+                        Height="104"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="2*" />
+                            <RowDefinition Height="3*" />
+                            <RowDefinition Height="2*" />
+                        </Grid.RowDefinitions>
+
+                        <Border
+                            Grid.RowSpan="3"
+                            Background="#14496F"
+                            BorderBrush="#2C7BB5"
+                            BorderThickness="1"
+                            CornerRadius="5" />
+
+                        <TextBlock
+                            Grid.Row="0"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontFamily="{StaticResource tihei}"
+                            FontSize="14"
+                            Foreground="#BBD9F0"
+                            Text="{Binding Name}" />
+
+                        <TextBlock
+                            Grid.Row="1"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontFamily="{StaticResource iconfont}"
+                            FontSize="52"
+                            Foreground="White"
+                            Text="&#xe600;" />
+
+                        <!--  状态显示（在线/离线）  -->
+                        <Button
+                            Grid.Row="2"
+                            Margin="0,0,0,10"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Background="Transparent"
+                            Style="{StaticResource ItemStatus}" />
+                    </Grid>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+    </ScrollViewer>
+        <Border Grid.Row="2" Background="#0E3F68" CornerRadius="5" HorizontalAlignment="Stretch">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                <ListBox ItemsSource="{Binding}" d:ItemsSource="{d:SampleData ItemCount=4}">
+                    <ListBox.ItemTemplate>
                         <DataTemplate>
-                            <Grid>
-                                <Border
-                                    Width="50"
-                                    Height="50"
-                                    Background="LightBlue"
-                                    CornerRadius="5" />
-                                <Grid
-                                    Height="50"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center">
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="1*" />
-                                        <RowDefinition Height="2*" />
-                                        <RowDefinition Height="1*" />
-                                    </Grid.RowDefinitions>
-
-                                    <TextBlock
-                                        Grid.Row="0"
-                                        FontFamily="{StaticResource tihei}"
-                                        FontSize="9"
-                                        Text="name" />
-                                    <TextBlock
-                                        Grid.Row="1"
-                                        HorizontalAlignment="Center"
-                                        VerticalAlignment="Center"
-                                        FontFamily="{StaticResource iconfont}"
-                                        FontSize="24"
-                                        Text="&#xe600;" />
-
-                                    <!--  状态显示（在线/离线）  -->
-                                    <Button
-                                        Grid.Row="2"
-                                        HorizontalAlignment="Center"
-                                        Background="Transparent"
-                                        Style="{StaticResource ItemStatus}" />
-
-                                    <!--  状态显示（在线/离线）  -->
-                                    <!--<Button HorizontalAlignment="Center" Style="{StaticResource ItemStatus}" />-->
-                                </Grid>
-                            </Grid>
+                            <Button Width="40" Height="40" Content="办卡1"/>
                         </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-            </Grid>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+                
+            </StackPanel>
+            
         </Border>
+
     </Grid>
 </UserControl>

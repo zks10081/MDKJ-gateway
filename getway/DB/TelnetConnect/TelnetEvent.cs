@@ -145,41 +145,31 @@ namespace getway.DB.TelnetConnect
         public static List<IpcUserModel> SipUserString(string result)
         {
 
+
+            // 1. 删除真实 ESC 控制字符
+            result = Regex.Replace(result, @"[\x1b\x00-\x1f\x7f]+", "");
+
+            // 2. 删除字面 ANSI 序列，例如 [37D
+            result = Regex.Replace(result, @"\[\d+[A-Za-z]", "");
+
+            // 3. 删除分页提示，例如 ---- More ( Press 'Q' to break ) ----
+            result = Regex.Replace(result, @"----\s*More.*?----", "");
+
             var lines = result.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
+
             List<IpcUserModel> List = new List<IpcUserModel>();
-            // 1. 预定义清理非打印字符的正则（如 [37D 这种回退符乱码）
-            // 正则1：删除所有真实的 ESC 控制字符（\u001b 等）
-            var escRegex = new Regex(@"[\x1b\x00-\x1f\x7f]+");
-            // 正则2：删除残留的字面 ANSI 序列（如 [37D、[2J 等）
-            var ansiRegex = new Regex(@"\[\d+[A-Za-z]");
 
             foreach (var line in lines)
             {
 
-                string cleanLine = line;
-
-                // 2. 直接跳过包含分页提示的行
-                if (cleanLine.Contains("More") && cleanLine.Contains("Press 'Q'"))
+                // 4. 跳过表头、分隔线和空行
+                if (line.Contains("---") || line.Contains("F  /S /P") || string.IsNullOrWhiteSpace(line))
                 {
                     continue;
                 }
-
-                // 3. 跳过表头、分隔线和空行
-                if (cleanLine.Contains("---") || cleanLine.Contains("F  /S /P") || string.IsNullOrWhiteSpace(cleanLine))
-                {
-                    continue;
-                }
-
-                // 4. 关键步骤：清理掉所有不可见的转义字符/乱码，防止数据粘在一起
-                // 全局清洗整个文本
-                cleanLine = escRegex.Replace(cleanLine, string.Empty);
-                cleanLine = ansiRegex.Replace(cleanLine, string.Empty);
-
-                // 清理后，45 和 46 的行就会变成干净的 "0  /1 /45   0        FailRegistered   8047"
-
                 // 5. 使用正则提取数据
                 // 匹配逻辑：数字/数字/数字  空格 数字  空格 字母单词  空格 数字
-                var match = Regex.Match(cleanLine.Trim(), @"(\d+)\s*/\s*(\d+)\s*/\s*(\d+)\s+(\d+)\s+(\S+)\s+(\d+)");
+                var match = Regex.Match(line.Trim(), @"(\d+)\s*/\s*(\d+)\s*/\s*(\d+)\s+(\d+)\s+(\S+)\s+(\d+)");
 
                 if (match.Success)
                 {

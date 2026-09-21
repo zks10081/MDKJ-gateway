@@ -5,7 +5,9 @@ using getway.Model;
 using getway.Util;
 using System.IO;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Windows.Input;
+using System.Windows.Shapes;
 
 namespace getway.ViewModel
 {
@@ -34,7 +36,7 @@ namespace getway.ViewModel
 
             AddConnectCommand = new AsyncRelayCommand(AddConnect);
             QueryBoardCommand = new Command(QueryBoard);
-            QueryBoardCommand = new Command(QuerySipUser);
+            QuerySIPUserCommand = new Command(QuerySipUser);
             QueryCommand = new Command(QueryAnyCommand);
 
 
@@ -99,11 +101,24 @@ namespace getway.ViewModel
             string host = nowNetwordIp;
             string key = username + host;
 
-            TelnetEvent.QueryBoard(key);
+            //TelnetEvent.QueryBoard(key);
 
 
-            StreamReader reader = TcpConnect.GetReader(key);
-            ReadContent = reader.ReadLine();
+            //StreamReader reader = TcpConnect.GetReader(key);
+            //ReadContent = reader.ReadLine();
+
+            // 正则1：删除所有真实的 ESC 控制字符（\u001b 等）
+            var escRegex = new Regex(@"[\x1b\x00-\x1f\x7f]+");
+            // 正则2：删除残留的字面 ANSI 序列（如 [37D、[2J 等）
+            var ansiRegex = new Regex(@"\[\d+[A-Za-z]");
+            string cleanLine = "---- More ( Press 'Q' to break ) ----\u001b[37D                                     \u001b[37D  0  /1 /21   0        FailRegistered   8023            ";
+
+
+            // 全局清洗整个文本
+            cleanLine = escRegex.Replace(cleanLine, string.Empty);
+            cleanLine = ansiRegex.Replace(cleanLine, string.Empty);
+
+            string result = cleanLine;
 
         }
 
@@ -114,11 +129,11 @@ namespace getway.ViewModel
             string host = nowNetwordIp;
             string key = username + host;
 
-            TelnetEvent.QuerySipUser(key);
+            //TelnetEvent.QuerySipUser(key);
 
 
-            StreamReader reader = TcpConnect.GetReader(key);
-            ReadContent = reader.ReadLine();
+            //StreamReader reader = TcpConnect.GetReader(key);
+            //ReadContent = reader.ReadLine();
 
 
         }

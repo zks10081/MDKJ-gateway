@@ -1,49 +1,77 @@
-﻿<UserControl
+<UserControl
     x:Class="getway.View.GetWayView"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="clr-namespace:getway.View"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    d:DesignHeight="450"
-    d:DesignWidth="800"
+    d:DesignHeight="930"
+    d:DesignWidth="1500"
     mc:Ignorable="d">
     <UserControl.Resources>
         <local:IpcItemView x:Key="ipc" />
 
-        <Style x:Key="ButtonStyle" TargetType="Button">
-            <Setter Property="Width" Value="80" />
-            <Setter Property="Height" Value="30" />
+        <!--  面板标题栏  -->
+        <Style x:Key="PanelHeader" TargetType="Border">
+            <Setter Property="Height" Value="24" />
+            <Setter Property="Background" Value="#005788" />
+            <Setter Property="CornerRadius" Value="5" />
+        </Style>
+        <Style x:Key="PanelHeaderIcon" TargetType="TextBlock">
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="FontFamily" Value="{StaticResource iconfont}" />
+            <Setter Property="FontSize" Value="12" />
             <Setter Property="Foreground" Value="White" />
-            <Setter Property="Margin" Value="10,10" />
+        </Style>
+        <Style x:Key="PanelHeaderText" TargetType="TextBlock">
+            <Setter Property="Margin" Value="6,0,0,0" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="Foreground" Value="White" />
+        </Style>
+
+        <!--  面板内容区  -->
+        <Style x:Key="PanelBody" TargetType="Border">
+            <Setter Property="Background" Value="#0E3F68" />
+            <Setter Property="CornerRadius" Value="5" />
+        </Style>
+
+        <!--  操作按钮  -->
+        <Style x:Key="ButtonStyle" TargetType="Button">
+            <Setter Property="Height" Value="30" />
+            <Setter Property="Margin" Value="0,0,0,8" />
+            <Setter Property="Background" Value="#1F6FA8" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Grid>
-                            <Border
-                                Name="border"
-                                Width="80"
-                                HorizontalAlignment="Left"
-                                Background="{TemplateBinding Background}"
-                                CornerRadius="5" />
+                        <Border
+                            Name="border"
+                            Background="{TemplateBinding Background}"
+                            CornerRadius="5">
                             <StackPanel
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
                                 Orientation="Horizontal">
                                 <TextBlock
-                                    Margin="5,0"
+                                    Margin="0,0,6,0"
                                     VerticalAlignment="Center"
                                     FontFamily="{StaticResource iconfont}"
-                                    FontSize="18"
+                                    FontSize="14"
                                     Text="{TemplateBinding Tag}" />
-                                <ContentPresenter HorizontalAlignment="Center" TextBlock.FontSize="11" />
+                                <ContentPresenter VerticalAlignment="Center" />
                             </StackPanel>
-                        </Grid>
+                        </Border>
 
                         <!--  触发器  -->
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="border" Property="Background" Value="#CCFFA500" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="border" Property="Opacity" Value="0.5" />
                             </Trigger>
                         </ControlTemplate.Triggers>
 
@@ -52,157 +80,214 @@
             </Setter>
         </Style>
 
+        <!--  命令输入框  -->
+        <Style x:Key="CommandInputStyle" TargetType="TextBox">
+            <Setter Property="Height" Value="30" />
+            <Setter Property="Margin" Value="0,0,0,8" />
+            <Setter Property="Padding" Value="6,0" />
+            <Setter Property="Background" Value="#0E3F68" />
+            <Setter Property="BorderBrush" Value="#2C7BB5" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="CaretBrush" Value="White" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+
+        <!--  网关列表项  -->
+        <Style x:Key="GatewayItemStyle" TargetType="ListBoxItem">
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border
+                            Name="itemBorder"
+                            Height="30"
+                            Margin="3,2"
+                            Background="Transparent"
+                            CornerRadius="4">
+                            <ContentPresenter Margin="8,0" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="itemBorder" Property="Background" Value="#33FFFFFF" />
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="itemBorder" Property="Background" Value="#CCFFA500" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
     </UserControl.Resources>
-    <Grid>
+    <Grid Margin="12,0,12,12">
         <Grid.RowDefinitions>
             <RowDefinition Height="40" />
             <RowDefinition />
         </Grid.RowDefinitions>
-        <Grid>
-            <Border HorizontalAlignment="Center" VerticalAlignment="Center">
 
-                <TextBlock
-                    Name="Title"
-                    FontFamily="tihei"
-                    FontSize="24"
-                    FontWeight="Bold"
-                    Foreground="#FFFFFF"
-                    Text="语音网关管理系统" />
-            </Border>
-        </Grid>
+        <TextBlock
+            Grid.Row="0"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            FontFamily="{StaticResource tihei}"
+            FontSize="24"
+            FontWeight="Bold"
+            Foreground="#FFFFFF"
+            Text="语音网关管理系统" />
+
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="150" />
-                <ColumnDefinition />
-                <ColumnDefinition Width="150" />
+                <ColumnDefinition Width="200" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="260" />
             </Grid.ColumnDefinitions>
 
             <!--  网关ip列表  -->
             <Grid Grid.Column="0">
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="20" />
+                    <RowDefinition Height="24" />
+                    <RowDefinition Height="10" />
                     <RowDefinition />
                 </Grid.RowDefinitions>
-                <Border
-                    Width="150"
-                    Height="20"
-                    VerticalAlignment="Top"
-                    Background="#005788"
-                    CornerRadius="5">
+                <Border Style="{StaticResource PanelHeader}">
                     <StackPanel
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
                         Orientation="Horizontal">
-                        <TextBlock
-                            Margin="5,0"
-                            FontFamily="{StaticResource iconfont}"
-                            Foreground="White"
-                            Text="&#xe64f;" />
-                        <TextBlock
-                            Margin="0,0,10,0"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            FontSize="9"
-                            Foreground="White"
-                            Text="网关列表" />
+                        <TextBlock Style="{StaticResource PanelHeaderIcon}" Text="&#xe64f;" />
+                        <TextBlock Style="{StaticResource PanelHeaderText}" Text="网关列表" />
                     </StackPanel>
                 </Border>
-                <Grid Grid.Row="1">
-                    <Border
-                        Width="150"
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Top"
-                        CornerRadius="5">
-                        <ListBox
-                            d:ItemsSource="{d:SampleData ItemCount=5}"
-                            Background="#005788"
-                            ItemsSource="{Binding GetWayList}">
-                            <ListBox.ItemTemplate>
-                                <DataTemplate>
-                                    <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
-                                        <TextBlock
-                                            Margin="0,5,5,0"
-                                            FontFamily="{StaticResource iconfont}"
-                                            Foreground="White"
-                                            Text="&#xe67d;" />
-                                        <TextBlock
-                                            FontFamily="{StaticResource tihei}"
-                                            Foreground="White"
-                                            Text="192.168.2.222" />
-                                        <!--  Text="{Binding ip}"  -->
-                                    </StackPanel>
-                                </DataTemplate>
-                            </ListBox.ItemTemplate>
-                        </ListBox>
-                    </Border>
-                </Grid>
-
+                <Border
+                    Grid.Row="2"
+                    Style="{StaticResource PanelBody}"
+                    ClipToBounds="True">
+                    <ListBox
+                        d:ItemsSource="{d:SampleData ItemCount=5}"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        ItemContainerStyle="{StaticResource GatewayItemStyle}"
+                        ItemsSource="{Binding GetWayList}"
+                        ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock
+                                        VerticalAlignment="Center"
+                                        FontFamily="{StaticResource iconfont}"
+                                        FontSize="12"
+                                        Foreground="White"
+                                        Text="&#xe67d;" />
+                                    <TextBlock
+                                        Margin="8,0,0,0"
+                                        VerticalAlignment="Center"
+                                        FontFamily="{StaticResource tihei}"
+                                        FontSize="12"
+                                        Foreground="White"
+                                        Text="{Binding ip}" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Border>
             </Grid>
 
             <!--  ipc电话内容  -->
-            <ContentControl Grid.Column="1" Content="{StaticResource ipc}" />
-
+            <Grid Grid.Column="1" Margin="10,0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="24" />
+                    <RowDefinition Height="10" />
+                    <RowDefinition />
+                </Grid.RowDefinitions>
+                <Border Style="{StaticResource PanelHeader}">
+                    <StackPanel
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Orientation="Horizontal">
+                        <TextBlock Style="{StaticResource PanelHeaderIcon}" Text="&#xe600;" />
+                        <TextBlock Style="{StaticResource PanelHeaderText}" Text="IP 电话用户" />
+                    </StackPanel>
+                </Border>
+                <Border Grid.Row="2" CornerRadius="5" Background="Transparent">
+                    <ContentControl Content="{StaticResource ipc}" />
+                </Border>
+            </Grid>
 
             <!--  操作控制  -->
             <Grid Grid.Column="2">
                 <Grid.RowDefinitions>
-                    <RowDefinition />
-                    <RowDefinition Height="200" />
+                    <RowDefinition Height="24" />
+                    <RowDefinition Height="10" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="16" />
+                    <RowDefinition Height="24" />
+                    <RowDefinition Height="10" />
+                    <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
-                <Border
-                    Grid.Row="0"
-                    HorizontalAlignment="Left"
-                    VerticalAlignment="Top">
-                    <StackPanel>
-                        <Button
-                            Background="AliceBlue"
-                            Command="{Binding AddConnectCommand}"
-                            Content="连接"
-                            Foreground="Black"
-                            Style="{StaticResource ButtonStyle}"
-                            Tag="&#xe626;" />
-                        <Button
-                            Background="AliceBlue"
-                            Command="{Binding QueryBoardCommand}"
-                            Content="查询板子"
-                            Foreground="Black"
-                            Style="{StaticResource ButtonStyle}"
-                            Tag="&#xe626;" />
-                        <Button
-                            Background="AliceBlue"
-                            Command="{Binding QuerySIPUserCommand}"
-                            Content="查询sip用户"
-                            Foreground="Black"
-                            Style="{StaticResource ButtonStyle}"
-                            Tag="&#xe626;" />
-                        <Grid>
-                            <StackPanel>
-                                <TextBox Width="150" Height="40" />
-                                <Button
-                                    Background="AliceBlue"
-                                    Command="{Binding QueryCommand}"
-                                    Content="执行命令"
-                                    Foreground="Black"
-                                    Style="{StaticResource ButtonStyle}"
-                                    Tag="&#xe626;" />
-                            </StackPanel>
-                        </Grid>
+
+                <Border Style="{StaticResource PanelHeader}">
+                    <StackPanel
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Orientation="Horizontal">
+                        <TextBlock Style="{StaticResource PanelHeaderIcon}" Text="&#xe626;" />
+                        <TextBlock Style="{StaticResource PanelHeaderText}" Text="操作控制" />
+                    </StackPanel>
+                </Border>
+
+                <StackPanel Grid.Row="2" Margin="0,2,0,0">
+                    <Button
+                        Command="{Binding AddConnectCommand}"
+                        Content="连接"
+                        Style="{StaticResource ButtonStyle}"
+                        Tag="&#xe626;" />
+                    <Button
+                        Command="{Binding QueryBoardCommand}"
+                        Content="查询板子"
+                        Style="{StaticResource ButtonStyle}"
+                        Tag="&#xe626;" />
+                    <Button
+                        Command="{Binding QuerySIPUserCommand}"
+                        Content="查询sip用户"
+                        Style="{StaticResource ButtonStyle}"
+                        Tag="&#xe626;" />
+                    <TextBox Style="{StaticResource CommandInputStyle}" />
+                    <Button
+                        Margin="0"
+                        Command="{Binding QueryCommand}"
+                        Content="执行命令"
+                        Style="{StaticResource ButtonStyle}"
+                        Tag="&#xe626;" />
+                </StackPanel>
+
+                <Border Grid.Row="4" Style="{StaticResource PanelHeader}">
+                    <StackPanel
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Orientation="Horizontal">
+                        <TextBlock Style="{StaticResource PanelHeaderIcon}" Text="&#xe64f;" />
+                        <TextBlock Style="{StaticResource PanelHeaderText}" Text="命令回显" />
                     </StackPanel>
                 </Border>
 
                 <Border
-                    Grid.Row="1"
-                    Margin="2"
-                    Padding="5"
-                    HorizontalAlignment="Center"
-                    VerticalAlignment="Top"
-                    BorderBrush="Black"
-                    BorderThickness="1"
-                    CornerRadius="5">
-                    <TextBlock
-                        Width="120"
-                        Height="200"
-                        Text="{Binding ReadContent}" />
+                    Grid.Row="6"
+                    Style="{StaticResource PanelBody}"
+                    ClipToBounds="True">
+                    <ScrollViewer
+                        Margin="6"
+                        HorizontalScrollBarVisibility="Auto"
+                        VerticalScrollBarVisibility="Auto">
+                        <TextBlock
+                            FontFamily="Consolas"
+                            FontSize="11"
+                            Foreground="#DCEBF7"
+                            Text="{Binding ReadContent}"
+                            TextWrapping="NoWrap" />
+                    </ScrollViewer>
                 </Border>
             </Grid>
 
