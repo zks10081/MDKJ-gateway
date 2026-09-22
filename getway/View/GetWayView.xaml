@@ -257,7 +257,7 @@
                         Content="查询sip用户"
                         Style="{StaticResource ButtonStyle}"
                         Tag="&#xe626;" />
-                    <TextBox Style="{StaticResource CommandInputStyle}" />
+                    <TextBox Text="{Binding AnyCommandString}" Style="{StaticResource CommandInputStyle}" />
                     <Button
                         Margin="0"
                         Command="{Binding QueryCommand}"

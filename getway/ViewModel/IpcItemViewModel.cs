@@ -2,10 +2,6 @@ using getway.Base;
 using getway.DB.TelnetConnect;
 using getway.Model;
 using getway.Util;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Windows.Input;
 
 namespace getway.ViewModel
@@ -48,6 +44,9 @@ namespace getway.ViewModel
         {
             // 构造时只做最小化初始化，不取数据：此时父 ViewModel 还没建立连接
             SelectBorderCommand = new Command(SelectBorderExecute);
+            //生成临时数据
+            //TempBorderInfo();
+            //TempSipUserInfo();
         }
 
         /// <summary>
@@ -97,7 +96,8 @@ namespace getway.ViewModel
 
             string key = Key;
             int slotNo = _SelectBorder.SlotNo;
-            var users = await Task.Run(() => TelnetEvent.QuerySipUser(key, 0, slotNo));
+            //var users = await Task.Run(() => TelnetEvent.QuerySipUser(key, 0, slotNo));
+            var users = TelnetEvent.QuerySipUser(key, 0, slotNo);
             if (token.IsCancellationRequested) return;
 
             IpcUserList = users ?? new List<IpcUserModel>();
@@ -109,6 +109,26 @@ namespace getway.ViewModel
             if (parameter is BorderModel border)
             {
                 SelectBorder = border;
+            }
+        }
+
+        public void TempBorderInfo()
+        {
+
+            BorderList.Clear();
+            for (int i = 1; i <= 4; i++)
+            {
+                BorderList.Add(new BorderModel() { BorderName = $"板卡{i}", SlotNo = i });
+            }
+        }
+
+        public void TempSipUserInfo()
+        {
+
+            IpcUserList.Clear();
+            for (int i = 0; i < 64; i++)
+            {
+                IpcUserList.Add(new IpcUserModel() { Name = Convert.ToString(8002 + i), State = "0", FSP = $"0/1/{i}" });
             }
         }
     }

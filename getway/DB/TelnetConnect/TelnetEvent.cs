@@ -12,9 +12,12 @@ namespace getway.DB.TelnetConnect
             if (telnet == null) return null;
 
             telnet.Send("enable");
-            telnet.Send($"display board {slotid}" + Environment.NewLine);
-            Thread.Sleep(300);
             string result = telnet.Receive();
+            telnet.Send($"display board {slotid}" + Environment.NewLine);
+            Thread.Sleep(1000);
+
+            telnet.Send("quit" + Environment.NewLine);
+            result = telnet.Receive();
             List<BorderModel> List = BorderString(result);
             return List;
         }
@@ -25,14 +28,15 @@ namespace getway.DB.TelnetConnect
             if (telnet == null) return null;
 
             telnet.Send("enable");
-            telnet.Send($"display sippstnuser reg-state {slotid}/{borderid}/0 {slotid}/{borderid}/63" + Environment.NewLine);
-            Thread.Sleep(300);
             string result = telnet.Receive();
+            telnet.Send($"display sippstnuser reg-state {slotid}/{borderid}/0 {slotid}/{borderid}/63" + Environment.NewLine);
+            Thread.Sleep(1000);
+            result = telnet.Receive();
             List<IpcUserModel> List = SipUserString(result);
             return List;
         }
 
-        public static string AnyCommand(string key, string command)
+        public static async Task<string> AnyCommand(string key, string command)
         {
             Telnet2 telnet = TcpConnect.GetTelnet(key);
             if (telnet == null) return null;
@@ -67,7 +71,7 @@ namespace getway.DB.TelnetConnect
                     BorderModel model = new BorderModel();
 
                     model.BorderName = string.IsNullOrEmpty(match.Groups[2].Value) ? null : match.Groups[2].Value;
-                    model.SlotNo = int.Parse(match.Groups[1].Value);
+                    model.SlotNo = int.Parse(match.Groups[1].Value) + 1;
 
                     borderList.Add(model);
 

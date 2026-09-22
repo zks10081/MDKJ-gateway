@@ -13,6 +13,8 @@ namespace getway.Util
         public static string POSTGRESQL_PASSWORD = "pg123456";
         public static string POSTGRESQL_DATABASE = "freeswitch";
         public static string DB_STRING = "";
+
+
         public static void SetDBString(string ip)
         {
             DB_STRING = $"Host={ip}; Port={POSTGRESQL_PORT}; User Id={POSTGRESQL_USERNAME}; Password={POSTGRESQL_PASSWORD}; Database={POSTGRESQL_DATABASE}";
@@ -35,6 +37,10 @@ namespace getway.Util
         public const string QuerySIPUserCallStatePassword_2 = "dm13456";
         public const string QuerySIPUserHotLineUsername = "queryhotline";
         public const string QuerySIPUserHotLinePassword = "dm13456";
+
+        //telnet参数配置
+        public static string Success_Flag = "dmkj>";
+        public static int Telnet_waitTime = 300;
 
 
     }

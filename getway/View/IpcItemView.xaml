@@ -43,7 +43,7 @@
                 <Setter.Value>
                     <ControlTemplate>
                         <Grid>
-                            <Border Background="#0E3F68" CornerRadius="5,5,0,0" />
+                            <Border Background="#1F6FA8" CornerRadius="5,5,0,0" />
                             <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
                                 <TextBlock
                                     Margin="5,7,0,5"
@@ -151,32 +151,51 @@
             HorizontalAlignment="Stretch"
             Background="Transparent"
             CornerRadius="5">
-            <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
-                <ListBox
-                    d:ItemsSource="{d:SampleData ItemCount=4}"
-                    Background="Transparent"
-                    ItemsSource="{Binding BorderList}"
-                    SelectedItem="{Binding SelectBorder}">
-                    <ListBox.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <StackPanel Orientation="Horizontal" />
-                        </ItemsPanelTemplate>
-                    </ListBox.ItemsPanel>
+            <Grid>
+                <!--  M0 0 55 20 C60 22 60 25 60 30 L60 305 C60 310 60 313 55 315 L0 335  -->
+                <Path
+                    Margin="0"
+                    Data=""
+                    Fill="#3000"
+                    Stretch="Fill">
+                    <Path.Stroke>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                            <GradientStop Offset="0" Color="Transparent" />
+                            <GradientStop Offset="0.4" Color="Orange" />
+                            <GradientStop Offset="0.6" Color="Orange" />
+                            <GradientStop Offset="1" Color="Transparent" />
+                        </LinearGradientBrush>
+                    </Path.Stroke>
+                </Path>
+
+                <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
+                    <ListBox
+                        d:ItemsSource="{d:SampleData ItemCount=4}"
+                        Background="Transparent"
+                        BorderBrush="Transparent"
+                        ItemsSource="{Binding BorderList}"
+                        SelectedItem="{Binding SelectBorder}">
+                        <ListBox.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                        </ListBox.ItemsPanel>
 
 
-                    <ListBox.ItemTemplate>
-                        <DataTemplate>
-                            <Button
-                                Width="120"
-                                Margin="10,5"
-                                Command="{Binding DataContext.SelectBorderCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                CommandParameter="{Binding}"
-                                Style="{StaticResource borderStyle}" />
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Button
+                                    Width="120"
+                                    Margin="10,5"
+                                    Command="{Binding DataContext.SelectBorderCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                    CommandParameter="{Binding}"
+                                    Style="{StaticResource borderStyle}" />
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
 
-            </StackPanel>
+                </StackPanel>
+            </Grid>
 
         </Border>
 

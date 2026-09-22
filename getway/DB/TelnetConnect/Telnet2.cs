@@ -1,4 +1,5 @@
 ﻿using getway.Util;
+using System.Net;
 using System.Net.Sockets;
 using System.Text;
 
@@ -98,7 +99,7 @@ namespace getway.DB.TelnetConnect
                 {
                     Send(password, waitTime);
                     result = Receive();
-                    if (result.EndsWith("dmkj>"))
+                    if (result.EndsWith(DefaulConfig.Success_Flag))
                     {
                         isLogin = true;
                     }
@@ -113,9 +114,10 @@ namespace getway.DB.TelnetConnect
         }
 
         //处理特殊结果
-        public void ResultCheck(StringBuilder info, int waitTime = 300)
+        public void ResultCheck(StringBuilder info)
         {
             string result = info.ToString().Trim();
+            int waitTime = DefaulConfig.Telnet_waitTime;
             while (true)
             {
                 if (result.EndsWith("---- More ( Press 'Q' to break ) ----"))
@@ -156,6 +158,7 @@ namespace getway.DB.TelnetConnect
                 } while (ns.DataAvailable);
             }
             string info = result.ToString().Trim();
+            //处理一些情况
             ResultCheck(result);
 
             return result.ToString().Trim();
@@ -175,6 +178,52 @@ namespace getway.DB.TelnetConnect
                 System.Threading.Thread.Sleep(waitTime);
             }
         }
+
+        public async Task SendAsync(string message, int waitTime = 100)
+        {
+            var data = Encoding.UTF8.GetBytes(message);
+
+            // 先发 4 字节长度头（网络字节序/大端）
+            var lengthPrefix = BitConverter.GetBytes(IPAddress.HostToNetworkOrder(data.Length));
+            await ns.WriteAsync(lengthPrefix, 0, 4);
+
+            // 再发数据体
+            await ns.WriteAsync(data, 0, data.Length);
+        }
+
+        /// <summary>
+        /// 精确读取指定字节数（解决拆包问题）
+        /// </summary>
+        private async Task ReadExactAsync(NetworkStream stream, byte[] buffer, int offset, int count)
+        {
+            int totalRead = 0;
+            while (totalRead < count)
+            {
+                int read = await stream.ReadAsync(buffer, offset + totalRead, count - totalRead);
+                if (read == 0)
+                    throw new Exception("连接已关闭");
+                totalRead += read;
+            }
+        }
+
+        /// <summary>
+        /// 接收一条完整消息
+        /// </summary>
+        public async Task<string> ReceiveAsync()
+        {
+
+            // 第一步：读 4 字节长度头
+            var lengthBuffer = new byte[4];
+            await ReadExactAsync(ns, lengthBuffer, 0, 4);
+            int messageLength = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(lengthBuffer, 0));
+
+            // 第二步：精确读取消息体
+            var dataBuffer = new byte[messageLength];
+            await ReadExactAsync(ns, dataBuffer, 0, messageLength);
+
+            return Encoding.UTF8.GetString(dataBuffer);
+        }
+
         /// <summary>
         /// 关闭
         /// </summary>

@@ -3,6 +3,7 @@ using getway.DB.Pg;
 using getway.DB.TelnetConnect;
 using getway.Model;
 using getway.Util;
+using System.Text;
 using System.Windows.Input;
 
 namespace getway.ViewModel
@@ -23,8 +24,18 @@ namespace getway.ViewModel
 
         public ICommand QueryCommand { get; set; }
 
-        private string _ReadContent;
-        public string ReadContent { get => _ReadContent; set => SetProperty(ref _ReadContent, value); }
+        // 日志缓冲：界面绑定的是 ReadContent 字符串，追加内容后必须主动通知刷新
+        private readonly StringBuilder _readContent = new StringBuilder();
+        public string ReadContent => _readContent.ToString();
+
+        private void AppendLog(string text)
+        {
+            _readContent.AppendLine(text);
+            OnPropertyChanged(nameof(ReadContent));
+        }
+
+        private string _AnyCommandString;
+        public string AnyCommandString { get => _AnyCommandString; set => SetProperty(ref _AnyCommandString, value); }
 
         // 子 ViewModel：由父 ViewModel 持有，在连接建立后再注入 key
         public IpcItemViewModel IpcItemVM { get; }
@@ -50,15 +61,13 @@ namespace getway.ViewModel
 
         public GetWayViewMode()
         {
-            ReadContent = "";
-
             // 子 ViewModel 先创建，此时没有 key 也不会取数据
             IpcItemVM = new IpcItemViewModel();
 
             AddConnectCommand = new AsyncRelayCommand(AddConnect);
             QueryBoardCommand = new AsyncRelayCommand(QueryBoard);
             QuerySIPUserCommand = new AsyncRelayCommand(QuerySipUser);
-            QueryCommand = new AsyncRelayCommand<string>(QueryAnyCommand);
+            QueryCommand = new AsyncRelayCommand(QueryAnyCommand);
 
             _ = InitAsync();
         }
@@ -73,14 +82,14 @@ namespace getway.ViewModel
             catch (Exception ex)
             {
                 GetWayList = new List<GetWayModel>();
-                ReadContent = "网关列表加载失败：" + ex.Message;
+                AppendLog("网关列表加载失败：" + ex.Message);
                 return;
             }
 
             var first = GetWayList.FirstOrDefault();
             if (first == null)
             {
-                ReadContent = "未查询到网关";
+                AppendLog("未查询到网关");
                 return;
             }
 
@@ -99,14 +108,14 @@ namespace getway.ViewModel
             _switchCts = cts;
 
             string key = ip + "root";
-            ReadContent = $"正在连接网关 {ip} ...";
+            AppendLog($"正在连接网关 {ip} ...");
 
             try
             {
                 var connectTask = Task.Run(() => TcpConnect.AddTelnet(key, ip));
                 if (await Task.WhenAny(connectTask, Task.Delay(ConnectTimeoutMs)) != connectTask)
                 {
-                    if (!cts.IsCancellationRequested) ReadContent = $"网关 {ip} 连接超时";
+                    if (!cts.IsCancellationRequested) AppendLog($"网关 {ip} 连接超时");
                     return;
                 }
 
@@ -115,7 +124,7 @@ namespace getway.ViewModel
 
                 if (telnet2 == null)
                 {
-                    ReadContent = $"网关 {ip} 连接失败";
+                    AppendLog($"网关 {ip} 连接失败");
                     return;
                 }
 
@@ -130,11 +139,11 @@ namespace getway.ViewModel
                 }
                 if (cts.IsCancellationRequested) return;
 
-                ReadContent = $"网关 {ip} 已连接：板卡 {IpcItemVM.BorderList.Count} 个，SIP 用户 {IpcItemVM.IpcUserList.Count} 个";
+                AppendLog($"网关 {ip} 已连接：板卡 {IpcItemVM.BorderList.Count} 个，SIP 用户 {IpcItemVM.IpcUserList.Count} 个");
             }
             catch (Exception ex)
             {
-                ReadContent = $"网关 {ip} 切换失败：{ex.Message}";
+                AppendLog($"网关 {ip} 切换失败：{ex.Message}");
             }
         }
 
@@ -143,7 +152,7 @@ namespace getway.ViewModel
         {
             if (string.IsNullOrEmpty(GetWayIp))
             {
-                ReadContent = "未选择网关";
+                AppendLog("未选择网关");
                 return;
             }
 
@@ -161,24 +170,25 @@ namespace getway.ViewModel
         public async Task QuerySipUser()
         {
             if (!IsConnected()) return;
-            await IpcItemVM.RefreshIpcAsync();
+            IpcItemVM.RefreshIpcAsync();
         }
 
         //任意命令
-        public async Task QueryAnyCommand(string? command)
+        public async Task QueryAnyCommand()
         {
             if (!IsConnected()) return;
+            string command = _AnyCommandString;
 
             string key = _currentKey;
             string result = await Task.Run(() => TelnetEvent.AnyCommand(key, command ?? string.Empty));
-            ReadContent = string.IsNullOrEmpty(result) ? "无回显" : result;
+            AppendLog(string.IsNullOrEmpty(result) ? "无回显" : result);
         }
 
         private bool IsConnected()
         {
             if (TcpConnect.GetTelnet(_currentKey)?.Connected != true)
             {
-                ReadContent = "网关未连接";
+                AppendLog("网关未连接");
                 return false;
             }
             return true;
