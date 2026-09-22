@@ -1,0 +1,24 @@
+网关切换的调用链在上一版提交里其实已经搭好了（GetWayIp → SwitchGetWay → IpcItemVM.SetKey → 重查），但一跑就会假死且拿不到正确数据。我把这几处补齐了，编译 0 错误。
+
+切换不再卡 UI（getway/ViewModel/GetWayViewModel.cs:1）
+
+原来构造函数和列表点击都在 UI 线程上同步做 TCP 连接 + telnet 登录 + 两轮 Send/Thread.Sleep/Receive。Telnet2.Negotiate() 里的 ns.Read 没有超时，网关不可达时整个窗口会一直白条，只能强杀。
+现在 SwitchGetWayAsync：连接和查询都丢到 Task.Run，结果回 UI 线程赋值；连接 8 秒、查询 15 秒兜底超时，超时/失败/成功分别写进「命令回显」（正在连接网关 x.x.x.x ... / 连接超时 / 已连接：板卡 N 个，SIP 用户 M 个）。
+加了 CancellationTokenSource 防抖：快速连点两个网关时，旧网关的慢查询回来后不会再覆盖新网关的列表（这是点选切换最容易踩的坑）。
+按你选的方案删掉了写死的 192.168.1.210：先异步查网关列表，再自动选中并连接第一项，GetWayIp 成为唯一数据源，所以列表高亮和实际连接的网关一定一致。GetWayList 从自动属性改成可通知属性 —— 否则异步加载完成后 ListBox 根本不会刷新。
+「连接 / 查询板子 / 查询sip用户 / 执行命令」全部换成 AsyncRelayCommand，未连接时统一提示「网关未连接」而不是发空指令。
+子 ViewModel 可等待（getway/ViewModel/IpcItemViewModel.cs:1）
+
+SetKey 只负责注入 key；取数据拆成 RefreshBoardAsync / RefreshIpcAsync / RefreshAllAsync(token)，父级能 await 完整一轮再汇报数量。
+选中板卡与刷新用户列表收敛到 SetSelectBorder：点板卡按钮走它（自己刷用户列表），切换网关走它并带上 token，避免同一轮里重复发两次 display sippstnuser；板卡查空时显式清空用户列表，不留上一个网关的残影。
+字段映射与在线判定（你选的 State == "Registered"）
+
+TelnetEvent.SipUserString 里 Name/State 取反了：第 5 组是注册状态文本、第 6 组才是分机号，原来把 FailRegistered 当名字显示、把 8023 当状态。已改为 Name=第6组、State=第5组（用样例 0 /1 /21 0 FailRegistered 8023 验证过分组位置）。不改这里的话，你选的在线判定永远不可能命中。
+IpcUserModel 新增 IsOnline => State == "Registered"，State 变化时一并通知；IpcItemView.xaml 状态胶囊改绑 IsOnline 的 True（原来是绑一个不存在的属性，永远灰）。注意别用 Contains("Registered") 判在线 —— FailRegistered 也包含这个子串。
+GetWayDB.QueryGetWayList：PgConnect.SelectAsync 连不上库时返回 null（异常被它吞了），原来直接 .Rows 抛 NRE，界面只能说「未将对象引用设置到对象的实例」。现在抛明确提示「数据库无响应，请检查网关地址与连接」。
+没验证到的部分：整条链路要真的 PostgreSQL + 可达的网关，我这边只能验证到编译通过。你跑起来后先看「命令回显」那行就知道卡在哪一步。
+
+两个我故意没动的行为，需要你确认：
+
+Telnet2.cs:106 的 isLogin = true 写在密码校验的 if 外面，密码错、连接已被 Client.Close() 也会返回"登录成功"，于是 AddTelnet 把一个死 socket 塞进连接池并当成已连接 —— 切换会显示"已连接：板卡 0 个"。我没改是因为它依赖 result.EndsWith("dmkj>") 这个提示符判断，一旦真实设备的提示符不是这个，收紧后所有连接都会变成失败，风险比现状更大。你确认提示符就是 dmkj> 我再改。
+连接池按 ip+"root" 为 key 只增不关（TcpConnect.CloseTenlet 没人调用），点遍所有网关会攒下同样数量的长连接。要不要在切换时关掉上一个？
