@@ -1,12 +1,6 @@
 ﻿using getway.Util;
 using Npgsql;
-using System;
-using System.Collections.Generic;
 using System.Data;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml;
 
 namespace getway.DB.Pg
 {
@@ -56,7 +50,7 @@ namespace getway.DB.Pg
             try
             {
                 conn = new NpgsqlConnection(DefaulConfig.DB_STRING + ";Timeout=3");
-                DataTable data = new DataTable() ;
+                DataTable data = new DataTable();
 
                 conn.Open();
                 using (NpgsqlDataAdapter sqldap = new NpgsqlDataAdapter(sqlText, conn))

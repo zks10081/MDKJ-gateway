@@ -42,8 +42,37 @@
             </Setter>
         </Style>
 
-        <Style TargetType="Border" x:Key="borderStyle">
+        <Style x:Key="borderStyle" TargetType="Button">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate>
+                        <Grid>
+                            <Border Background="#0E3F68" CornerRadius="5,5,0,0" />
+                            <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
+                                <TextBlock
+                                    Margin="5,7,0,5"
+                                    FontFamily="{StaticResource iconfont}"
+                                    FontSize="18"
+                                    Foreground="White"
+                                    Text="&#xe605;" />
+                                <TextBlock
+                                    Margin="5"
+                                    FontSize="18"
+                                    Foreground="White"
+                                    Text="{Binding BorderName}" />
+                            </StackPanel>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="Orange" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
+
+
     </UserControl.Resources>
 
     <Grid>
@@ -53,84 +82,106 @@
             <RowDefinition />
         </Grid.RowDefinitions>
 
-    <!--  WrapPanel + ItemWidth/ItemHeight：列数随中间栏宽度自动增减，纵向滚动  -->
-    <ScrollViewer
-        Grid.Row="0"
-        HorizontalScrollBarVisibility="Disabled"
-        VerticalScrollBarVisibility="Auto">
-        <ItemsControl
-            Margin="6"
-            d:ItemsSource="{d:SampleData ItemCount=64}"
-            ItemsSource="{Binding IpcUserList}">
-            <ItemsControl.ItemsPanel>
-                <ItemsPanelTemplate>
-                    <WrapPanel ItemHeight="112" ItemWidth="112" />
-                </ItemsPanelTemplate>
-            </ItemsControl.ItemsPanel>
+        <!--  WrapPanel + ItemWidth/ItemHeight：列数随中间栏宽度自动增减，纵向滚动  -->
+        <ScrollViewer
+            Grid.Row="0"
+            HorizontalScrollBarVisibility="Disabled"
+            VerticalScrollBarVisibility="Auto">
+            <ItemsControl
+                Margin="6"
+                d:ItemsSource="{d:SampleData ItemCount=64}"
+                ItemsSource="{Binding IpcUserList}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel ItemHeight="112" ItemWidth="112" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
 
-            <ItemsControl.ItemTemplate>
-                <DataTemplate>
-                    <Grid
-                        Width="104"
-                        Height="104"
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="2*" />
-                            <RowDefinition Height="3*" />
-                            <RowDefinition Height="2*" />
-                        </Grid.RowDefinitions>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Button Background="Transparent" BorderBrush="Transparent">
+                            <Grid
+                                Width="104"
+                                Height="104"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="2*" />
+                                    <RowDefinition Height="3*" />
+                                    <RowDefinition Height="2*" />
+                                </Grid.RowDefinitions>
 
-                        <Border
-                            Grid.RowSpan="3"
-                            Background="#14496F"
-                            BorderBrush="#2C7BB5"
-                            BorderThickness="1"
-                            CornerRadius="5" />
+                                <Border
+                                    Grid.RowSpan="3"
+                                    Background="#14496F"
+                                    BorderBrush="#2C7BB5"
+                                    BorderThickness="1"
+                                    CornerRadius="5" />
 
-                        <TextBlock
-                            Grid.Row="0"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            FontFamily="{StaticResource tihei}"
-                            FontSize="14"
-                            Foreground="#BBD9F0"
-                            Text="{Binding Name}" />
+                                <TextBlock
+                                    Grid.Row="0"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource tihei}"
+                                    FontSize="14"
+                                    Foreground="#BBD9F0"
+                                    Text="{Binding Name}" />
 
-                        <TextBlock
-                            Grid.Row="1"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            FontFamily="{StaticResource iconfont}"
-                            FontSize="52"
-                            Foreground="White"
-                            Text="&#xe600;" />
+                                <TextBlock
+                                    Grid.Row="1"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource iconfont}"
+                                    FontSize="52"
+                                    Foreground="White"
+                                    Text="&#xe600;" />
 
-                        <!--  状态显示（在线/离线）  -->
-                        <Button
-                            Grid.Row="2"
-                            Margin="0,0,0,10"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Background="Transparent"
-                            Style="{StaticResource ItemStatus}" />
-                    </Grid>
-                </DataTemplate>
-            </ItemsControl.ItemTemplate>
-        </ItemsControl>
-    </ScrollViewer>
-        <Border Grid.Row="2" Background="#0E3F68" CornerRadius="5" HorizontalAlignment="Stretch">
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                <ListBox ItemsSource="{Binding}" d:ItemsSource="{d:SampleData ItemCount=4}">
+                                <!--  状态显示（在线/离线）  -->
+                                <Button
+                                    Grid.Row="2"
+                                    Margin="0,0,0,10"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Background="Transparent"
+                                    Style="{StaticResource ItemStatus}" />
+                            </Grid>
+                        </Button>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+        <Border
+            Grid.Row="2"
+            HorizontalAlignment="Stretch"
+            Background="Transparent"
+            CornerRadius="5">
+            <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
+                <ListBox
+                    d:ItemsSource="{d:SampleData ItemCount=4}"
+                    Background="Transparent"
+                    ItemsSource="{Binding BorderList}"
+                    SelectedItem="{Binding SelectBorder}">
+                    <ListBox.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal" />
+                        </ItemsPanelTemplate>
+                    </ListBox.ItemsPanel>
+
+
                     <ListBox.ItemTemplate>
                         <DataTemplate>
-                            <Button Width="40" Height="40" Content="办卡1"/>
+                            <Button
+                                Width="120"
+                                Margin="10,5"
+                                Command="{Binding DataContext.SelectBorderCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                CommandParameter="{Binding}"
+                                Style="{StaticResource borderStyle}" />
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
-                
+
             </StackPanel>
-            
+
         </Border>
 
     </Grid>

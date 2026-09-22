@@ -9,8 +9,6 @@
     d:DesignWidth="1500"
     mc:Ignorable="d">
     <UserControl.Resources>
-        <local:IpcItemView x:Key="ipc" />
-
         <!--  面板标题栏  -->
         <Style x:Key="PanelHeader" TargetType="Border">
             <Setter Property="Height" Value="24" />
@@ -163,15 +161,17 @@
                 </Border>
                 <Border
                     Grid.Row="2"
-                    Style="{StaticResource PanelBody}"
-                    ClipToBounds="True">
+                    ClipToBounds="True"
+                    Style="{StaticResource PanelBody}">
                     <ListBox
                         d:ItemsSource="{d:SampleData ItemCount=5}"
                         Background="Transparent"
                         BorderThickness="0"
                         ItemContainerStyle="{StaticResource GatewayItemStyle}"
                         ItemsSource="{Binding GetWayList}"
-                        ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                        ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                        SelectedValue="{Binding GetWayIp}"
+                        SelectedValuePath="IP">
                         <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal">
@@ -187,7 +187,7 @@
                                         FontFamily="{StaticResource tihei}"
                                         FontSize="12"
                                         Foreground="White"
-                                        Text="{Binding ip}" />
+                                        Text="{Binding IP}" />
                                 </StackPanel>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
@@ -211,8 +211,11 @@
                         <TextBlock Style="{StaticResource PanelHeaderText}" Text="IP 电话用户" />
                     </StackPanel>
                 </Border>
-                <Border Grid.Row="2" CornerRadius="5" Background="Transparent">
-                    <ContentControl Content="{StaticResource ipc}" />
+                <Border
+                    Grid.Row="2"
+                    Background="Transparent"
+                    CornerRadius="5">
+                    <local:IpcItemView DataContext="{Binding IpcItemVM}" />
                 </Border>
             </Grid>
 
@@ -275,8 +278,8 @@
 
                 <Border
                     Grid.Row="6"
-                    Style="{StaticResource PanelBody}"
-                    ClipToBounds="True">
+                    ClipToBounds="True"
+                    Style="{StaticResource PanelBody}">
                     <ScrollViewer
                         Margin="6"
                         HorizontalScrollBarVisibility="Auto"

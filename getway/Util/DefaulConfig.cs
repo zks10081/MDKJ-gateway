@@ -23,6 +23,18 @@ namespace getway.Util
 
 
 
+        public static string Now_Telnet_key = "";
+        // Telnet用户名和密码
+        public const string BaseUsername = "queryboard"; // 身兼多职：查询业务版，修改热线，批量删除SIP用户，批量增加SIP用户
+        public const string BasePassword = "dm13456";
+        public const string QuerySIPUserRegStateUsername = "queryreg";
+        public const string QuerySIPUserRegStatePassword = "dm13456";
+        public const string QuerySIPUserCallStateUsername_1 = "querycall01";
+        public const string QuerySIPUserCallStatePassword_1 = "dm13456";
+        public const string QuerySIPUserCallStateUsername_2 = "querycall02";
+        public const string QuerySIPUserCallStatePassword_2 = "dm13456";
+        public const string QuerySIPUserHotLineUsername = "queryhotline";
+        public const string QuerySIPUserHotLinePassword = "dm13456";
 
 
     }

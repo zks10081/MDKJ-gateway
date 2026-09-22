@@ -10,6 +10,55 @@ namespace getway.DB.TelnetConnect
         public List<TcpClient> Clients;
         private static Dictionary<string, Dictionary<string, Object>> pool = new Dictionary<string, System.Collections.Generic.Dictionary<string, Object>>();
 
+        private static Dictionary<string, Telnet2> TelnetPool = new Dictionary<string, Telnet2>();
+
+        public static Telnet2? AddTelnet(String key, string host)
+        {
+            if (TelnetPool.ContainsKey(key))
+            {
+                Telnet2 exist = TelnetPool[key];
+                if (exist != null && exist.Connected) return exist;
+                TelnetPool.Remove(key);
+            }
+
+            Telnet2 telnet2 = new Telnet2();
+            telnet2.Connect(host, 23, "root", "mduadmin");
+
+            // 登录失败不入池，返回 null 让调用方感知
+            if (!telnet2.isLogin)
+            {
+                telnet2.Close();
+                return null;
+            }
+
+            TelnetPool[key] = telnet2;
+            return telnet2;
+
+        }
+        public static Telnet2 GetTelnet(String key)
+        {
+            if (TelnetPool.ContainsKey(key))
+            {
+                return TelnetPool[key];
+            }
+            return null;
+
+        }
+
+        public static void CloseTenlet(string key)
+        {
+            if (TelnetPool.ContainsKey(key)) TelnetPool[key].Close();
+        }
+
+        public static void CloseAll(string key)
+        {
+            foreach (var item in TelnetPool.Keys)
+            {
+                TelnetPool[item].Close();
+            }
+        }
+
+
         public static async Task<Dictionary<string, object>> Add(String key, string host)
         {
             if (pool.ContainsKey(key)) return pool[key];

@@ -1,23 +1,20 @@
 ﻿using CommunityToolkit.Mvvm.Input;
 using getway.Base;
+using getway.DB.Pg;
 using getway.DB.TelnetConnect;
 using getway.Model;
 using getway.Util;
-using System.IO;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Windows.Input;
-using System.Windows.Shapes;
 
 namespace getway.ViewModel
 {
     class GetWayViewMode : ViewModelBase
     {
 
-        private readonly Random _random = new Random();
-        public List<GetWayIpInfo> GetWayList { get; set; } = new List<GetWayIpInfo>();
+        public List<GetWayModel> GetWayList { get; set; } = new List<GetWayModel>();
 
-        public string nowNetwordIp { get; set; }
+        public string nowNetwordIp { get; set; } = string.Empty;
 
         public AsyncRelayCommand AddConnectCommand { get; set; }
         public ICommand QueryBoardCommand { get; set; }
@@ -28,11 +25,40 @@ namespace getway.ViewModel
         private string _ReadContent;
         public string ReadContent { get => _ReadContent; set => SetProperty(ref _ReadContent, value); }
 
+        // 子 ViewModel：由父 ViewModel 持有，在连接建立后再注入 key
+        public IpcItemViewModel IpcItemVM { get; }
+
+        private string _GetWayIp = string.Empty;
+        public string GetWayIp
+        {
+            get => _GetWayIp; set
+            {
+                if (_GetWayIp != value) // 值检查
+                {
+                    _GetWayIp = value;
+                    OnPropertyChanged(nameof(GetWayIp));
+                    if (!string.IsNullOrEmpty(_GetWayIp))
+                    {
+                        //调用切换网关
+                        SwitchGetWay(_GetWayIp);
+                    }
+                }
+            }
+        }
+
         public GetWayViewMode()
         {
-            InitGetWayList();
-            nowNetwordIp = "192.168.1.210";
             ReadContent = "";
+
+            // 1. 先创建子 ViewModel（此时还没有数据，不会取数据）
+            IpcItemVM = new IpcItemViewModel();
+
+            // 2. 加载网关列表
+            InitGetWayList();
+
+            // 3. 建立连接 -> 写入 Now_Telnet_key -> 再让子 ViewModel 取数据
+            nowNetwordIp = "192.168.1.210";
+            SwitchGetWay(nowNetwordIp);
 
             AddConnectCommand = new AsyncRelayCommand(AddConnect);
             QueryBoardCommand = new Command(QueryBoard);
@@ -42,54 +68,60 @@ namespace getway.ViewModel
 
 
         }
+
+        /// <summary>
+        /// 建立/切换网关 telnet 连接，连接成功后刷新子 ViewModel 数据
+        /// </summary>
+        private void SwitchGetWay(string ip)
+        {
+            nowNetwordIp = ip;
+            string key = ip + "root";
+
+            Telnet2? telnet2 = TcpConnect.AddTelnet(key, ip);
+            if (telnet2 == null)
+            {
+                ReadContent = $"网关 {ip} 连接失败";
+                return;
+            }
+
+            DefaulConfig.Now_Telnet_key = key;
+            IpcItemVM.SetKey(key);
+        }
+
         public void InitGetWayList()
         {
-            for (int i = 0; i < 4; i++)
+            try
             {
-                String randomIp = $"{_random.Next(256)}.{_random.Next(256)}.{_random.Next(256)}.{_random.Next(256)}";
-                GetWayList.Add(new GetWayIpInfo() { ip = randomIp });
+                GetWayList = GetWayDB.QueryGetWayList();
+            }
+            catch (Exception ex)
+            {
+                GetWayList = new List<GetWayModel>();
+                ReadContent = "网关列表加载失败：" + ex.Message;
             }
         }
 
         //测试连接
         public async Task AddConnect()
         {
-            string username = "admin";
             string host = nowNetwordIp;
-            string key = username + host;
             StringBuilder resultBuild = new StringBuilder();
-            string result = "";
-            //Dictionary<string, object> poolItem = await TcpConnect.Add(key, host);
-
-
-            //StreamReader reader = (StreamReader)poolItem["reader"];
-            //ReadContent = reader.ReadLine();
-
-            Telnet2 telnet2 = new Telnet2();
             resultBuild.AppendLine("登录连接：");
-            result = telnet2.Connect(nowNetwordIp, 23, "root", "mduadmin");
-            resultBuild.AppendLine(result);
 
-            if (result.EndsWith("Error"))
+            Telnet2? telnet2 = await Task.Run(() => TcpConnect.AddTelnet(host + "root", host));
+
+            if (telnet2 == null)
             {
+                resultBuild.AppendLine($"{host} 连接失败");
+                ReadContent = resultBuild.ToString().Trim();
                 return;
             }
 
-            //resultBuild.AppendLine("查询板卡：");
-            //telnet2.Send("enable");
-            //telnet2.Send("display board 0" + Environment.NewLine);
-            //result = telnet2.Receive();
-            //List<BorderModel> BoederList = TelnetEvent.BorderString(result);
-            //resultBuild.AppendLine(result + Environment.NewLine);
+            DefaulConfig.Now_Telnet_key = host + "root";
+            resultBuild.AppendLine($"{host} 连接成功");
 
-            resultBuild.AppendLine("查询SIP用户：");
-            telnet2.Send("enable");
-            telnet2.Send("display sippstnuser reg-state 0/1/0 0/1/63" + Environment.NewLine);
-            result = telnet2.Receive();
-            List<IpcUserModel> BoederList = TelnetEvent.SipUserString(result);
-
-            resultBuild.AppendLine(result + Environment.NewLine);
-
+            // 连接成功后才让子 ViewModel 取板卡与 SIP 用户数据
+            await Task.Run(() => IpcItemVM.SetKey(DefaulConfig.Now_Telnet_key));
 
             ReadContent = resultBuild.ToString().Trim();
         }
@@ -97,60 +129,27 @@ namespace getway.ViewModel
         //查询板卡
         public void QueryBoard(object paramter)
         {
-            string username = "admin";
-            string host = nowNetwordIp;
-            string key = username + host;
-
-            //TelnetEvent.QueryBoard(key);
-
-
-            //StreamReader reader = TcpConnect.GetReader(key);
-            //ReadContent = reader.ReadLine();
-
-            // 正则1：删除所有真实的 ESC 控制字符（\u001b 等）
-            var escRegex = new Regex(@"[\x1b\x00-\x1f\x7f]+");
-            // 正则2：删除残留的字面 ANSI 序列（如 [37D、[2J 等）
-            var ansiRegex = new Regex(@"\[\d+[A-Za-z]");
-            string cleanLine = "---- More ( Press 'Q' to break ) ----\u001b[37D                                     \u001b[37D  0  /1 /21   0        FailRegistered   8023            ";
-
-
-            // 全局清洗整个文本
-            cleanLine = escRegex.Replace(cleanLine, string.Empty);
-            cleanLine = ansiRegex.Replace(cleanLine, string.Empty);
-
-            string result = cleanLine;
-
+            IpcItemVM.initBorderList();
         }
 
         //查询sip用户
         public void QuerySipUser(object paramter)
         {
-            string username = "admin";
-            string host = nowNetwordIp;
-            string key = username + host;
-
-            //TelnetEvent.QuerySipUser(key);
-
-
-            //StreamReader reader = TcpConnect.GetReader(key);
-            //ReadContent = reader.ReadLine();
-
-
+            IpcItemVM.initIpcList();
         }
 
         //任意命令
         public void QueryAnyCommand(object paramter)
         {
-            string username = "admin";
-            string host = nowNetwordIp;
-            string key = username + host;
-            string command = (string)paramter;
+            string command = paramter as string ?? string.Empty;
+            if (string.IsNullOrEmpty(DefaulConfig.Now_Telnet_key))
+            {
+                ReadContent = "网关未连接";
+                return;
+            }
 
-            TelnetEvent.command(key, command);
-
-
-            StreamReader reader = TcpConnect.GetReader(key);
-            ReadContent = reader.ReadLine();
+            string result = TelnetEvent.AnyCommand(DefaulConfig.Now_Telnet_key, command);
+            ReadContent = string.IsNullOrEmpty(result) ? "无回显" : result;
         }
 
 

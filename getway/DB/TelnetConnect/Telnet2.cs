@@ -14,6 +14,8 @@ namespace getway.DB.TelnetConnect
         private readonly int BuffSize = 1024 * 4;
         private CancellationTokenSource _cts;
 
+        public bool isLogin { get; private set; }
+
         /// <summary>
         /// 登录输入用户名提示字符
         /// 默认值：ogin:
@@ -51,13 +53,20 @@ namespace getway.DB.TelnetConnect
             string result = string.Empty;
             try
             {
-                Client = new TcpClient(hostname, port);
+                Client = new TcpClient();
+                // 同步等待连接结果，最多 3 秒，避免界面长时间假死
+                var connectTask = Client.ConnectAsync(hostname, port);
+                if (!connectTask.Wait(3000))
+                {
+                    throw new TimeoutException($"连接 {hostname}:{port} 超时");
+                }
+
                 ns = Client.GetStream();
                 result = Negotiate();
             }
             catch (Exception e)
             {
-                result = e.Message;
+                result = e.InnerException?.Message ?? e.Message;
             }
 
             return result;
@@ -71,18 +80,15 @@ namespace getway.DB.TelnetConnect
         /// <param name="password">密码</param>
         /// <param name="waitTime">连接等待时间</param>
         /// <returns></returns>
-        public string Connect(string hostname, int port, string username, string password, int waitTime = 1000)
+        public string Connect(string hostname, int port, string username, string password, int waitTime = 300)
         {
             string result = string.Empty;
-            //如果连通
-            if (Connected)
+            //未连通则先建立 TCP 连接并完成 telnet 协商（拿到 "User name:" 提示）
+            if (!Connected)
             {
-                Send(" " + Environment.NewLine);
-                result = Receive();
-                return result;
+                result = Connect(hostname, port);
             }
 
-            result = Connect(hostname, port);
 
             if (Connected && result.EndsWith(LoginPrompt))
             {
@@ -97,12 +103,14 @@ namespace getway.DB.TelnetConnect
                         Client.Close();
                         result = "Logon Error";
                     }
+                    isLogin = true;
                 }
             }
             return result;
         }
 
-        public void ResultCheck(StringBuilder info, int waitTime = 1000)
+        //处理特殊结果
+        public void ResultCheck(StringBuilder info, int waitTime = 300)
         {
             string result = info.ToString().Trim();
             while (true)
@@ -169,7 +177,10 @@ namespace getway.DB.TelnetConnect
         /// </summary>
         public void Close()
         {
-            Client.Close();
+            if (Client != null)
+            {
+                Client.Close();
+            }
         }
 
         /// <summary>
@@ -184,6 +195,8 @@ namespace getway.DB.TelnetConnect
                 while (true)
                 {
                     byte[] rev = ReceiveBytes();
+                    // 读不到任何数据说明对端已关闭，避免在这里死循环
+                    if (rev.Length == 0) throw new Exception("未收到登录提示，连接已关闭");
                     result = Encoding.ASCII.GetString(rev).Trim();
                     if (result.EndsWith(LoginPrompt))
                     {

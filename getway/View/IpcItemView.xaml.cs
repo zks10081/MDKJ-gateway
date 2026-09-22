@@ -1,5 +1,4 @@
-﻿using getway.ViewModel;
-using System.Windows.Controls;
+﻿using System.Windows.Controls;
 
 namespace getway.View
 {
@@ -11,7 +10,8 @@ namespace getway.View
         public IpcItemView()
         {
             InitializeComponent();
-            this.DataContext = new IpcItemViewModel();
+            // DataContext 由父视图（GetWayView）通过绑定注入 IpcItemViewModel，
+            // 不再在这里 new，避免子 ViewModel 先于父 ViewModel 创建
         }
     }
 }
