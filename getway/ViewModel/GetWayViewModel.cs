@@ -1,10 +1,8 @@
-﻿using CommunityToolkit.Mvvm.Input;
-using getway.Base;
+using CommunityToolkit.Mvvm.Input;
 using getway.DB.Pg;
 using getway.DB.TelnetConnect;
 using getway.Model;
 using getway.Util;
-using System.Text;
 using System.Windows.Input;
 
 namespace getway.ViewModel
@@ -12,9 +10,12 @@ namespace getway.ViewModel
     class GetWayViewMode : ViewModelBase
     {
 
-        public List<GetWayModel> GetWayList { get; set; } = new List<GetWayModel>();
+        // 网关不可达时的兜底等待上限，避免一次切换把这一轮流程挂住
+        private const int ConnectTimeoutMs = 8000;
+        private const int QueryTimeoutMs = 15000;
 
-        public string nowNetwordIp { get; set; } = string.Empty;
+        private List<GetWayModel> _GetWayList = new List<GetWayModel>();
+        public List<GetWayModel> GetWayList { get => _GetWayList; set => SetProperty(ref _GetWayList, value); }
 
         public AsyncRelayCommand AddConnectCommand { get; set; }
         public ICommand QueryBoardCommand { get; set; }
@@ -31,132 +32,156 @@ namespace getway.ViewModel
         private string _GetWayIp = string.Empty;
         public string GetWayIp
         {
-            get => _GetWayIp; set
+            get => _GetWayIp;
+            set
             {
-                if (_GetWayIp != value) // 值检查
+                if (SetProperty(ref _GetWayIp, value) && !string.IsNullOrEmpty(value))
                 {
-                    _GetWayIp = value;
-                    OnPropertyChanged(nameof(GetWayIp));
-                    if (!string.IsNullOrEmpty(_GetWayIp))
-                    {
-                        //调用切换网关
-                        SwitchGetWay(_GetWayIp);
-                    }
+                    _ = SwitchGetWayAsync(value);
                 }
             }
         }
+
+        // 当前已连上的 telnet 标识，空表示未连接
+        private string _currentKey = string.Empty;
+
+        // 每次切换换一个 token，被覆盖的旧切换不再写回界面
+        private CancellationTokenSource? _switchCts;
 
         public GetWayViewMode()
         {
             ReadContent = "";
 
-            // 1. 先创建子 ViewModel（此时还没有数据，不会取数据）
+            // 子 ViewModel 先创建，此时没有 key 也不会取数据
             IpcItemVM = new IpcItemViewModel();
 
-            // 2. 加载网关列表
-            InitGetWayList();
-
-            // 3. 建立连接 -> 写入 Now_Telnet_key -> 再让子 ViewModel 取数据
-            nowNetwordIp = "192.168.1.210";
-            SwitchGetWay(nowNetwordIp);
-
             AddConnectCommand = new AsyncRelayCommand(AddConnect);
-            QueryBoardCommand = new Command(QueryBoard);
-            QuerySIPUserCommand = new Command(QuerySipUser);
-            QueryCommand = new Command(QueryAnyCommand);
+            QueryBoardCommand = new AsyncRelayCommand(QueryBoard);
+            QuerySIPUserCommand = new AsyncRelayCommand(QuerySipUser);
+            QueryCommand = new AsyncRelayCommand<string>(QueryAnyCommand);
 
-
-
+            _ = InitAsync();
         }
 
-        /// <summary>
-        /// 建立/切换网关 telnet 连接，连接成功后刷新子 ViewModel 数据
-        /// </summary>
-        private void SwitchGetWay(string ip)
-        {
-            nowNetwordIp = ip;
-            string key = ip + "root";
-
-            Telnet2? telnet2 = TcpConnect.AddTelnet(key, ip);
-            if (telnet2 == null)
-            {
-                ReadContent = $"网关 {ip} 连接失败";
-                return;
-            }
-
-            DefaulConfig.Now_Telnet_key = key;
-            IpcItemVM.SetKey(key);
-        }
-
-        public void InitGetWayList()
+        //加载网关列表，并默认连上第一个网关
+        private async Task InitAsync()
         {
             try
             {
-                GetWayList = GetWayDB.QueryGetWayList();
+                GetWayList = await Task.Run(GetWayDB.QueryGetWayList);
             }
             catch (Exception ex)
             {
                 GetWayList = new List<GetWayModel>();
                 ReadContent = "网关列表加载失败：" + ex.Message;
-            }
-        }
-
-        //测试连接
-        public async Task AddConnect()
-        {
-            string host = nowNetwordIp;
-            StringBuilder resultBuild = new StringBuilder();
-            resultBuild.AppendLine("登录连接：");
-
-            Telnet2? telnet2 = await Task.Run(() => TcpConnect.AddTelnet(host + "root", host));
-
-            if (telnet2 == null)
-            {
-                resultBuild.AppendLine($"{host} 连接失败");
-                ReadContent = resultBuild.ToString().Trim();
                 return;
             }
 
-            DefaulConfig.Now_Telnet_key = host + "root";
-            resultBuild.AppendLine($"{host} 连接成功");
+            var first = GetWayList.FirstOrDefault();
+            if (first == null)
+            {
+                ReadContent = "未查询到网关";
+                return;
+            }
 
-            // 连接成功后才让子 ViewModel 取板卡与 SIP 用户数据
-            await Task.Run(() => IpcItemVM.SetKey(DefaulConfig.Now_Telnet_key));
+            // 赋值即触发切换，保证列表高亮与已连网关始终一致
+            GetWayIp = first.IP;
+        }
 
-            ReadContent = resultBuild.ToString().Trim();
+        /// <summary>
+        /// 建立/切换网关 telnet 连接，成功后重查板卡与 SIP 用户
+        /// </summary>
+        private async Task SwitchGetWayAsync(string ip)
+        {
+            _switchCts?.Cancel();
+            _switchCts?.Dispose();
+            var cts = new CancellationTokenSource();
+            _switchCts = cts;
+
+            string key = ip + "root";
+            ReadContent = $"正在连接网关 {ip} ...";
+
+            try
+            {
+                var connectTask = Task.Run(() => TcpConnect.AddTelnet(key, ip));
+                if (await Task.WhenAny(connectTask, Task.Delay(ConnectTimeoutMs)) != connectTask)
+                {
+                    if (!cts.IsCancellationRequested) ReadContent = $"网关 {ip} 连接超时";
+                    return;
+                }
+
+                Telnet2? telnet2 = await connectTask;
+                if (cts.IsCancellationRequested) return;
+
+                if (telnet2 == null)
+                {
+                    ReadContent = $"网关 {ip} 连接失败";
+                    return;
+                }
+
+                _currentKey = key;
+                DefaulConfig.Now_Telnet_key = key;
+                IpcItemVM.SetKey(key);
+
+                var refreshTask = IpcItemVM.RefreshAllAsync(cts.Token);
+                if (await Task.WhenAny(refreshTask, Task.Delay(QueryTimeoutMs)) == refreshTask)
+                {
+                    await refreshTask;
+                }
+                if (cts.IsCancellationRequested) return;
+
+                ReadContent = $"网关 {ip} 已连接：板卡 {IpcItemVM.BorderList.Count} 个，SIP 用户 {IpcItemVM.IpcUserList.Count} 个";
+            }
+            catch (Exception ex)
+            {
+                ReadContent = $"网关 {ip} 切换失败：{ex.Message}";
+            }
+        }
+
+        //测试连接：重连当前网关并刷新数据
+        public async Task AddConnect()
+        {
+            if (string.IsNullOrEmpty(GetWayIp))
+            {
+                ReadContent = "未选择网关";
+                return;
+            }
+
+            await SwitchGetWayAsync(GetWayIp);
         }
 
         //查询板卡
-        public void QueryBoard(object paramter)
+        public async Task QueryBoard()
         {
-            IpcItemVM.initBorderList();
+            if (!IsConnected()) return;
+            await IpcItemVM.RefreshBoardAsync();
         }
 
         //查询sip用户
-        public void QuerySipUser(object paramter)
+        public async Task QuerySipUser()
         {
-            IpcItemVM.initIpcList();
+            if (!IsConnected()) return;
+            await IpcItemVM.RefreshIpcAsync();
         }
 
         //任意命令
-        public void QueryAnyCommand(object paramter)
+        public async Task QueryAnyCommand(string? command)
         {
-            string command = paramter as string ?? string.Empty;
-            if (string.IsNullOrEmpty(DefaulConfig.Now_Telnet_key))
-            {
-                ReadContent = "网关未连接";
-                return;
-            }
+            if (!IsConnected()) return;
 
-            string result = TelnetEvent.AnyCommand(DefaulConfig.Now_Telnet_key, command);
+            string key = _currentKey;
+            string result = await Task.Run(() => TelnetEvent.AnyCommand(key, command ?? string.Empty));
             ReadContent = string.IsNullOrEmpty(result) ? "无回显" : result;
         }
 
-
-
-        public class GetWayIpInfo
+        private bool IsConnected()
         {
-            public String ip { get; set; }
+            if (TcpConnect.GetTelnet(_currentKey)?.Connected != true)
+            {
+                ReadContent = "网关未连接";
+                return false;
+            }
+            return true;
         }
     }
 }

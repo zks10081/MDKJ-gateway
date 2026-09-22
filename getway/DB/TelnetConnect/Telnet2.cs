@@ -98,12 +98,15 @@ namespace getway.DB.TelnetConnect
                 {
                     Send(password, waitTime);
                     result = Receive();
-                    if (!result.EndsWith("dmkj>"))
+                    if (result.EndsWith("dmkj>"))
+                    {
+                        isLogin = true;
+                    }
+                    else
                     {
                         Client.Close();
                         result = "Logon Error";
                     }
-                    isLogin = true;
                 }
             }
             return result;

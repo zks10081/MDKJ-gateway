@@ -110,8 +110,9 @@ namespace getway.DB.TelnetConnect
 
                 IpcUserModel model = new IpcUserModel();
 
-                model.Name = string.IsNullOrEmpty(match.Groups[5].Value) ? null : match.Groups[5].Value;
-                model.State = string.IsNullOrEmpty(match.Groups[6].Value) ? null : match.Groups[6].Value;
+                // 回显形如 "0 /1 /21  0  FailRegistered  8023"：第5组是注册状态，第6组是分机号
+                model.Name = string.IsNullOrEmpty(match.Groups[6].Value) ? null : match.Groups[6].Value;
+                model.State = string.IsNullOrEmpty(match.Groups[5].Value) ? null : match.Groups[5].Value;
                 model.FSP = $"{match.Groups[1].Value}/{match.Groups[2].Value}/{match.Groups[3].Value}";
 
                 List.Add(model);

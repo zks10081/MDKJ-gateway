@@ -1,9 +1,11 @@
-﻿using getway.Base;
+using getway.Base;
 using getway.DB.TelnetConnect;
 using getway.Model;
 using getway.Util;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Input;
 
 namespace getway.ViewModel
@@ -20,19 +22,22 @@ namespace getway.ViewModel
         private BorderModel? _SelectBorder;
         public BorderModel? SelectBorder
         {
-            get => _SelectBorder; set
+            get => _SelectBorder;
+            set => SetSelectBorder(value, CancellationToken.None);
+        }
+
+        // 改选中项并触发用户列表刷新；token 用于丢弃过期结果
+        private void SetSelectBorder(BorderModel? border, CancellationToken token)
+        {
+            if (SetProperty(ref _SelectBorder, border))
             {
-                if (_SelectBorder != value) // 值检查
-                {
-                    _SelectBorder = value;
-                    OnPropertyChanged(nameof(SelectBorder));
-                    if (_SelectBorder != null)
-                    {
-                        initIpcList();
-                    }
-                }
+                _ipcRefresh = RefreshIpcAsync(token);
             }
         }
+
+        // 最近一次用户列表刷新任务，供父 ViewModel 等待
+        private Task _ipcRefresh = Task.CompletedTask;
+        public Task IpcRefresh => _ipcRefresh;
 
         // telnet 连接标识，由父 ViewModel（GetWayViewMode）在连接建立后注入
         public string Key { get; private set; } = string.Empty;
@@ -46,32 +51,19 @@ namespace getway.ViewModel
         }
 
         /// <summary>
-        /// 由父 ViewModel 在 telnet 连接成功后调用，保证子 ViewModel 不会先于父 ViewModel 取数据
+        /// 由父 ViewModel 在 telnet 连接成功后注入，取数据前必须已有 key
         /// </summary>
-        public void SetKey(string key)
-        {
-            Key = key ?? string.Empty;
-            initBorderList();   // 内部给 SelectBorder 赋值时会自动刷新 SIP 用户列表
-            if (_SelectBorder == null)
-            {
-                initIpcList();
-            }
-        }
+        public void SetKey(string key) => Key = key ?? string.Empty;
 
-        //获取sip用户注册数据
-        public void initIpcList()
+        //重查板卡与 SIP 用户
+        public async Task RefreshAllAsync(CancellationToken token = default)
         {
-            if (string.IsNullOrEmpty(Key) || _SelectBorder == null)
-            {
-                IpcUserList = new List<IpcUserModel>();
-                return;
-            }
-
-            IpcUserList = TelnetEvent.QuerySipUser(Key, 0, _SelectBorder.SlotNo) ?? new List<IpcUserModel>();
+            await RefreshBoardAsync(token);
+            await IpcRefresh;
         }
 
         //获取卡框板槽信息
-        public void initBorderList()
+        public async Task RefreshBoardAsync(CancellationToken token = default)
         {
             if (string.IsNullOrEmpty(Key))
             {
@@ -80,8 +72,35 @@ namespace getway.ViewModel
                 return;
             }
 
-            BorderList = TelnetEvent.QueryBoard(Key, 0) ?? new List<BorderModel>();
-            SelectBorder = BorderList.FirstOrDefault();
+            string key = Key;
+            var boards = await Task.Run(() => TelnetEvent.QueryBoard(key, 0));
+            // 切换网关期间旧结果不能覆盖新网关数据
+            if (token.IsCancellationRequested) return;
+
+            BorderList = boards ?? new List<BorderModel>();
+            var first = BorderList.FirstOrDefault();
+            if (first == null)
+            {
+                IpcUserList = new List<IpcUserModel>();
+            }
+            SetSelectBorder(first, token);
+        }
+
+        //获取sip用户注册数据
+        public async Task RefreshIpcAsync(CancellationToken token = default)
+        {
+            if (string.IsNullOrEmpty(Key) || _SelectBorder == null)
+            {
+                IpcUserList = new List<IpcUserModel>();
+                return;
+            }
+
+            string key = Key;
+            int slotNo = _SelectBorder.SlotNo;
+            var users = await Task.Run(() => TelnetEvent.QuerySipUser(key, 0, slotNo));
+            if (token.IsCancellationRequested) return;
+
+            IpcUserList = users ?? new List<IpcUserModel>();
         }
 
         //选择板卡运行方法
