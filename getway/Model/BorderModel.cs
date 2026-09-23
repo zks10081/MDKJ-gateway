@@ -12,5 +12,10 @@ namespace getway.Model
         private int _SlotNo;
         public int SlotNo { get => _SlotNo; set => SetProperty(ref _SlotNo, value); }
 
+        private bool _IsEnable;
+        public bool IsEnable { get => _IsEnable; set => SetProperty(ref _IsEnable, value); }
+
+
+
     }
 }

@@ -22,21 +22,30 @@ namespace getway.ViewModel
             set => SetSelectBorder(value, CancellationToken.None);
         }
 
+
         // 改选中项并触发用户列表刷新；token 用于丢弃过期结果
         private void SetSelectBorder(BorderModel? border, CancellationToken token)
         {
             if (SetProperty(ref _SelectBorder, border))
             {
-                _ipcRefresh = RefreshIpcAsync(token);
+                //_ipcRefresh = RefreshIpcAsync();
+                RefreshIpcAsync();
             }
         }
+
+        private bool _isBorder = false;
+
+        private bool _isSipUserReg = false;
+
+        private bool _isSipUserCall = false;
+        private CancellationTokenSource _cts;
 
         // 最近一次用户列表刷新任务，供父 ViewModel 等待
         private Task _ipcRefresh = Task.CompletedTask;
         public Task IpcRefresh => _ipcRefresh;
 
         // telnet 连接标识，由父 ViewModel（GetWayViewMode）在连接建立后注入
-        public string Key { get; private set; } = string.Empty;
+        public string IP { get; private set; } = string.Empty;
 
         public ICommand SelectBorderCommand { get; }
 
@@ -44,63 +53,170 @@ namespace getway.ViewModel
         {
             // 构造时只做最小化初始化，不取数据：此时父 ViewModel 还没建立连接
             SelectBorderCommand = new Command(SelectBorderExecute);
+            _cts = new CancellationTokenSource();
             //生成临时数据
-            //TempBorderInfo();
-            //TempSipUserInfo();
+            TempBorderInfo();
+            TempSipUserInfo();
         }
 
         /// <summary>
         /// 由父 ViewModel 在 telnet 连接成功后注入，取数据前必须已有 key
         /// </summary>
-        public void SetKey(string key) => Key = key ?? string.Empty;
+        public void SetIp(string ip) => IP = ip ?? string.Empty;
 
         //重查板卡与 SIP 用户
         public async Task RefreshAllAsync(CancellationToken token = default)
         {
-            await RefreshBoardAsync(token);
-            await IpcRefresh;
+            RefreshBoardAsync();
+            //await IpcRefresh;
+            RefreshIpcAsync();
         }
 
         //获取卡框板槽信息
-        public async Task RefreshBoardAsync(CancellationToken token = default)
+        public void RefreshBoardAsync()
         {
-            if (string.IsNullOrEmpty(Key))
+            if (string.IsNullOrEmpty(IP))
             {
-                BorderList = new List<BorderModel>();
+                TempBorderInfo();
                 SelectBorder = null;
                 return;
             }
+            if (_isBorder) return;
+            _isBorder = true;
 
-            string key = Key;
-            var boards = await Task.Run(() => TelnetEvent.QueryBoard(key, 0));
+            string ip = IP;
+            string name = DefaulConfig.BaseUsername;
+            string password = DefaulConfig.BasePassword;
+            string key = ip + name;
+
+            TcpConnect.AddTelnet(ip + name, ip, name, password);
+
+            TelnetEvent.QueryBoard(key, 0);
+
+            string result = TcpConnect.Receive(key);
+            TelnetEvent.BorderString(result, BorderList);
+
+            //Task.Run(async () =>
+            //{
+            //    string name = DefaulConfig.BaseUsername;
+            //    string password = DefaulConfig.BasePassword;
+            //    string key = ip + name;
+
+            //    TcpConnect.AddTelnet(ip + name, ip, name, password);
+
+
+            //    while (!_cts.Token.IsCancellationRequested && _isBorder)
+            //    {
+            //        try
+            //        {
+            //            TelnetEvent.QueryBoard(key, 0);
+            //            await Task.Delay(1000, _cts.Token);
+
+            //            string result = TcpConnect.Receive(key);
+            //            TelnetEvent.BorderString(result, BorderList);
+
+            //            await Task.Delay(4000, _cts.Token);
+            //        }
+            //        catch (OperationCanceledException) { break; }
+            //        catch (Exception ex)
+            //        {
+            //            //Dispatcher.Invoke(() => AppendLog($"轮询出错: {ex.Message}"));
+            //            await Task.Delay(5000, _cts.Token);
+            //        }
+            //    }
+            //});
+
             // 切换网关期间旧结果不能覆盖新网关数据
-            if (token.IsCancellationRequested) return;
+            if (_cts.Token.IsCancellationRequested) return;
 
-            BorderList = boards ?? new List<BorderModel>();
-            var first = BorderList.FirstOrDefault();
-            if (first == null)
-            {
-                IpcUserList = new List<IpcUserModel>();
-            }
-            SetSelectBorder(first, token);
+
+
         }
 
         //获取sip用户注册数据
-        public async Task RefreshIpcAsync(CancellationToken token = default)
+        public void RefreshIpcAsync()
         {
-            if (string.IsNullOrEmpty(Key) || _SelectBorder == null)
+
+            if (string.IsNullOrEmpty(IP) || _SelectBorder == null)
             {
-                IpcUserList = new List<IpcUserModel>();
+                TempSipUserInfo();
                 return;
             }
 
-            string key = Key;
+            string ip = IP;
             int slotNo = _SelectBorder.SlotNo;
-            //var users = await Task.Run(() => TelnetEvent.QuerySipUser(key, 0, slotNo));
-            var users = TelnetEvent.QuerySipUser(key, 0, slotNo);
-            if (token.IsCancellationRequested) return;
 
-            IpcUserList = users ?? new List<IpcUserModel>();
+            //if (_isSipUserReg) return;
+            //_isSipUserReg = true;
+
+            string name = DefaulConfig.QuerySIPUserRegStateUsername;
+            string password = DefaulConfig.QuerySIPUserRegStatePassword;
+            string key = ip + name;
+
+            TcpConnect.AddTelnet(ip + name, ip, name, password);
+
+            try
+            {
+                //查询sip用户注册数据
+                TelnetEvent.QuerySipUser(key, 0, slotNo);
+
+
+                //await Task.Delay(5000, _cts.Token);
+
+                //处理查询数据
+                string result = String.Empty;
+                do
+                {
+                    result = TcpConnect.Receive(key);
+                    TelnetEvent.SipUserString(result, IpcUserList);
+
+                } while (!String.IsNullOrEmpty(result));
+
+            }
+            catch (OperationCanceledException e)
+            {
+                Console.WriteLine(e);
+            }
+            catch (Exception ex)
+            {
+                //Dispatcher.Invoke(() => AppendLog($"轮询出错: {ex.Message}"));
+                //await Task.Delay(5000, token);
+            }
+
+            //await Task.Run(async () =>
+            //{
+            //    while (!token.IsCancellationRequested && _isSipUserReg)
+            //    {
+            //        try
+            //        {
+            //            //查询sip用户注册数据
+            //            TelnetEvent.QuerySipUser(key, 0, slotNo);
+
+
+            //            await Task.Delay(5000, token);
+
+            //            //处理查询数据
+            //            string result = String.Empty;
+            //            do
+            //            {
+            //                result = TcpConnect.Receive(key);
+            //                TelnetEvent.BorderString(result, BorderList);
+
+            //            } while (String.IsNullOrEmpty(result));
+
+            //        }
+            //        catch (OperationCanceledException) { break; }
+            //        catch (Exception ex)
+            //        {
+            //            //Dispatcher.Invoke(() => AppendLog($"轮询出错: {ex.Message}"));
+            //            await Task.Delay(5000, token);
+            //        }
+            //    }
+            //});
+
+
+
+            if (_cts.Token.IsCancellationRequested) return;
         }
 
         //选择板卡运行方法
@@ -118,7 +234,7 @@ namespace getway.ViewModel
             BorderList.Clear();
             for (int i = 1; i <= 4; i++)
             {
-                BorderList.Add(new BorderModel() { BorderName = $"板卡{i}", SlotNo = i });
+                BorderList.Add(new BorderModel() { BorderName = $"板卡{i}", SlotNo = i, IsEnable = false });
             }
         }
 

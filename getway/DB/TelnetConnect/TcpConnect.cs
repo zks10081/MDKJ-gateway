@@ -16,7 +16,7 @@ namespace getway.DB.TelnetConnect
         /// <param name="key"></param>
         /// <param name="host"></param>
         /// <returns></returns>
-        public static Telnet2? AddTelnet(String key, string host)
+        public static Telnet2? AddTelnet(String key, string host, string name, string password)
         {
             if (TelnetPool.ContainsKey(key))
             {
@@ -26,7 +26,7 @@ namespace getway.DB.TelnetConnect
             }
 
             Telnet2 telnet2 = new Telnet2();
-            telnet2.Connect(host, 23, "root", "mduadmin");
+            telnet2.Connect(host, 23, name, password);
 
             // 登录失败不入池，返回 null 让调用方感知
             if (!telnet2.isLogin)
@@ -52,6 +52,15 @@ namespace getway.DB.TelnetConnect
             }
             return null;
 
+        }
+
+        public static string Receive(String key)
+        {
+            if (TelnetPool.ContainsKey(key))
+            {
+                return TelnetPool[key].Receive();
+            }
+            return String.Empty;
         }
 
         /// <summary>

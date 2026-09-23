@@ -5,6 +5,7 @@ using getway.Model;
 using getway.Util;
 using System.Text;
 using System.Windows.Input;
+using System.Windows.Threading;
 
 namespace getway.ViewModel
 {
@@ -94,7 +95,7 @@ namespace getway.ViewModel
             }
 
             // 赋值即触发切换，保证列表高亮与已连网关始终一致
-            GetWayIp = first.IP;
+            //GetWayIp = first.IP;
         }
 
         /// <summary>
@@ -112,7 +113,7 @@ namespace getway.ViewModel
 
             try
             {
-                var connectTask = Task.Run(() => TcpConnect.AddTelnet(key, ip));
+                var connectTask = Task.Run(() => TcpConnect.AddTelnet(key, ip, "root", "mduadmin"));
                 if (await Task.WhenAny(connectTask, Task.Delay(ConnectTimeoutMs)) != connectTask)
                 {
                     if (!cts.IsCancellationRequested) AppendLog($"网关 {ip} 连接超时");
@@ -130,7 +131,7 @@ namespace getway.ViewModel
 
                 _currentKey = key;
                 DefaulConfig.Now_Telnet_key = key;
-                IpcItemVM.SetKey(key);
+                IpcItemVM.SetIp(ip);
 
                 var refreshTask = IpcItemVM.RefreshAllAsync(cts.Token);
                 if (await Task.WhenAny(refreshTask, Task.Delay(QueryTimeoutMs)) == refreshTask)
@@ -162,25 +163,29 @@ namespace getway.ViewModel
         //查询板卡
         public async Task QueryBoard()
         {
-            if (!IsConnected()) return;
-            await IpcItemVM.RefreshBoardAsync();
+            //if (!IsConnected()) return;
+            IpcItemVM.RefreshBoardAsync();
         }
 
         //查询sip用户
         public async Task QuerySipUser()
         {
-            if (!IsConnected()) return;
+            //if (!IsConnected()) return;
             IpcItemVM.RefreshIpcAsync();
         }
 
         //任意命令
         public async Task QueryAnyCommand()
         {
-            if (!IsConnected()) return;
+            //if (!IsConnected()) return;
             string command = _AnyCommandString;
 
             string key = _currentKey;
             string result = await Task.Run(() => TelnetEvent.AnyCommand(key, command ?? string.Empty));
+
+            TelnetRadiantPi radiantPi = new TelnetRadiantPi();
+            radiantPi.RadianPiConnect(command);
+
             AppendLog(string.IsNullOrEmpty(result) ? "无回显" : result);
         }
 
@@ -193,5 +198,16 @@ namespace getway.ViewModel
             }
             return true;
         }
+
+
+        //---------------------radaintpi测试--------------------------
+        private TelnetMonitorService _monitor;
+        private readonly DispatcherTimer _uiTimer;
+        private CancellationTokenSource _cts;
+        private Task _connectTask;
+        private readonly List<string> _logBuffer = new();
+
+
+
     }
 }

@@ -6,34 +6,25 @@ namespace getway.DB.TelnetConnect
     class TelnetEvent
     {
 
-        public static List<BorderModel> QueryBoard(string key, int slotid)
+        public static void QueryBoard(string key, int slotid)
         {
             Telnet2 telnet = TcpConnect.GetTelnet(key);
-            if (telnet == null) return null;
 
             telnet.Send("enable");
             string result = telnet.Receive();
             telnet.Send($"display board {slotid}" + Environment.NewLine);
-            Thread.Sleep(1000);
 
             telnet.Send("quit" + Environment.NewLine);
-            result = telnet.Receive();
-            List<BorderModel> List = BorderString(result);
-            return List;
         }
 
-        public static List<IpcUserModel> QuerySipUser(string key, int slotid, int borderid)
+        public static void QuerySipUser(string key, int slotid, int borderid)
         {
             Telnet2 telnet = TcpConnect.GetTelnet(key);
-            if (telnet == null) return null;
 
-            telnet.Send("enable");
+            telnet.Send("enable" + Environment.NewLine);
             string result = telnet.Receive();
             telnet.Send($"display sippstnuser reg-state {slotid}/{borderid}/0 {slotid}/{borderid}/63" + Environment.NewLine);
-            Thread.Sleep(1000);
-            result = telnet.Receive();
-            List<IpcUserModel> List = SipUserString(result);
-            return List;
+            telnet.Send("quit" + Environment.NewLine);
         }
 
         public static async Task<string> AnyCommand(string key, string command)
@@ -50,11 +41,10 @@ namespace getway.DB.TelnetConnect
 
 
 
-        public static List<BorderModel> BorderString(string result)
+        public static void BorderString(string result, List<BorderModel> borderList)
         {
 
             var lines = result.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
-            List<BorderModel> borderList = new List<BorderModel>();
 
             foreach (var line in lines)
             {
@@ -73,15 +63,16 @@ namespace getway.DB.TelnetConnect
                     model.BorderName = string.IsNullOrEmpty(match.Groups[2].Value) ? null : match.Groups[2].Value;
                     model.SlotNo = int.Parse(match.Groups[1].Value) + 1;
 
-                    borderList.Add(model);
-
+                    if (model.SlotNo >= 0 || model.SlotNo <= 4) { }
+                    borderList[model.SlotNo] = model;
                 }
-            }
-            return borderList;
 
+            }
         }
 
-        public static List<IpcUserModel> SipUserString(string result)
+
+
+        public static void SipUserString(string result, List<IpcUserModel> List)
         {
 
 
@@ -104,7 +95,6 @@ namespace getway.DB.TelnetConnect
 
             var matches = Regex.Matches(result, pattern);
 
-            List<IpcUserModel> List = new List<IpcUserModel>();
 
             foreach (Match match in matches)
             {
@@ -113,15 +103,15 @@ namespace getway.DB.TelnetConnect
                 if (match.Value.StartsWith("enabledmkj") || match.Value.StartsWith("dmkj")) continue;
 
                 IpcUserModel model = new IpcUserModel();
+                int s = int.Parse(match.Groups[2].Value);
 
                 // 回显形如 "0 /1 /21  0  FailRegistered  8023"：第5组是注册状态，第6组是分机号
                 model.Name = string.IsNullOrEmpty(match.Groups[6].Value) ? null : match.Groups[6].Value;
                 model.State = string.IsNullOrEmpty(match.Groups[5].Value) ? null : match.Groups[5].Value;
                 model.FSP = $"{match.Groups[1].Value}/{match.Groups[2].Value}/{match.Groups[3].Value}";
 
-                List.Add(model);
+                List[s] = model;
             }
-            return List;
 
         }
     }
