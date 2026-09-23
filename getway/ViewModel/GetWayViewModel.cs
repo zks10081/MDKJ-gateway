@@ -200,13 +200,18 @@ namespace getway.ViewModel
         }
 
 
-        //---------------------radaintpi测试--------------------------
-        private TelnetMonitorService _monitor;
-        private readonly DispatcherTimer _uiTimer;
-        private CancellationTokenSource _cts;
-        private Task _connectTask;
-        private readonly List<string> _logBuffer = new();
+        //---------------------网关操控--------------------------
+        public AsyncRelayCommand AddGetwayCommand { get; set; }//添加网关
+        public AsyncRelayCommand DeleteGetwayCommand { get; set; }//删除网关
+        public AsyncRelayCommand SaveConfigCommand { get; set; }//保存配置
+        public AsyncRelayCommand bohaoCommand { get; set; }//拨号
 
+
+        public void AddGetway()
+        {
+            GetWayDB.AddGatewayModel(new GetWayModel());
+
+        }
 
 
     }

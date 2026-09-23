@@ -5,6 +5,9 @@
     <Compile Update="Login.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Update="View\AddGetwayView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Update="View\AlarmView.xaml.cs">
       <SubType>Code</SubType>
     </Compile>

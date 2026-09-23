@@ -75,7 +75,7 @@ namespace getway.ViewModel
                 MessageBox.Show("登录失败");
                 return;
             }
-            else if (_IP == "" || _IP == null)
+            else if (_IP == "" || _IP == null || !ConfigUtil.IsIP(_IP))
             {
                 MessageBox.Show("登录失败");
                 return;

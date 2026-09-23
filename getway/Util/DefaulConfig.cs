@@ -14,7 +14,7 @@ namespace getway.Util
         public static string POSTGRESQL_DATABASE = "freeswitch";
         public static string DB_STRING = "";
 
-
+        public static int FrameId = 12;
         public static void SetDBString(string ip)
         {
             DB_STRING = $"Host={ip}; Port={POSTGRESQL_PORT}; User Id={POSTGRESQL_USERNAME}; Password={POSTGRESQL_PASSWORD}; Database={POSTGRESQL_DATABASE}";
