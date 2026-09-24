@@ -11,30 +11,60 @@
 
     <UserControl.Resources>
         <!--  状态胶囊：背景画在 Border 上，才会真正显示成色块  -->
+        <!--  配色原则：底色饱和、文字按底色明度切换深/浅，保证任何状态下都清晰  -->
+        <!--  状态色与 DefaulConfig 中的 SIPUserBackgroundColorOf* 一一对应  -->
         <Style x:Key="ItemStatus" TargetType="Button">
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border
                             Name="StatusBorder"
+                            MinWidth="50"
                             Margin="0,3,0,0"
-                            Padding="5,1"
-                            Background="#9E9E9E"
-                            CornerRadius="7">
+                            Padding="8,2"
+                            HorizontalAlignment="Center"
+                            Background="{Binding BackgroundColor}"
+                            BorderBrush="#59FFFFFF"
+                            BorderThickness="1"
+                            CornerRadius="8">
                             <TextBlock
                                 Name="StatusText"
-                                FontSize="10"
+                                HorizontalAlignment="Center"
+                                FontSize="11"
+                                FontWeight="SemiBold"
                                 Foreground="White"
-                                Text="● 离线" />
+                                Text="● 未知" />
                         </Border>
                         <ControlTemplate.Triggers>
-                            <DataTrigger Binding="{Binding IsOnline}" Value="0">
-                                <Setter TargetName="StatusBorder" Property="Background" Value="#4CAF50" />
-                                <Setter TargetName="StatusText" Property="Text" Value="● 在线" />
-                            </DataTrigger>
-                            <DataTrigger Binding="{Binding IsOnline}" Value="1">
-                                <Setter TargetName="StatusBorder" Property="Background" Value="#9E9E9E" />
+                            <!--  0 离线：灰蓝底 + 白字  -->
+                            <DataTrigger Binding="{Binding Status}" Value="0">
+                                <Setter TargetName="StatusText" Property="Foreground" Value="White" />
                                 <Setter TargetName="StatusText" Property="Text" Value="● 离线" />
+                            </DataTrigger>
+                            <!--  1 振铃：琥珀黄底（亮）+ 深字  -->
+                            <DataTrigger Binding="{Binding Status}" Value="1">
+                                <Setter TargetName="StatusText" Property="Foreground" Value="#3A2A00" />
+                                <Setter TargetName="StatusText" Property="Text" Value="● 振铃" />
+                            </DataTrigger>
+                            <!--  2 摘机：玫粉底（亮）+ 深字  -->
+                            <DataTrigger Binding="{Binding Status}" Value="2">
+                                <Setter TargetName="StatusText" Property="Foreground" Value="#4A0D22" />
+                                <Setter TargetName="StatusText" Property="Text" Value="● 摘机" />
+                            </DataTrigger>
+                            <!--  3 通话中：正红底 + 白字  -->
+                            <DataTrigger Binding="{Binding Status}" Value="3">
+                                <Setter TargetName="StatusText" Property="Foreground" Value="White" />
+                                <Setter TargetName="StatusText" Property="Text" Value="● 通话" />
+                            </DataTrigger>
+                            <!--  4 锁定：深橙棕底 + 白字  -->
+                            <DataTrigger Binding="{Binding Status}" Value="4">
+                                <Setter TargetName="StatusText" Property="Foreground" Value="White" />
+                                <Setter TargetName="StatusText" Property="Text" Value="● 锁机" />
+                            </DataTrigger>
+                            <!--  5 空闲：绿底 + 白字  -->
+                            <DataTrigger Binding="{Binding Status}" Value="5">
+                                <Setter TargetName="StatusText" Property="Foreground" Value="White" />
+                                <Setter TargetName="StatusText" Property="Text" Value="● 空闲" />
                             </DataTrigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -133,15 +163,13 @@
                                     VerticalAlignment="Center"
                                     FontFamily="{StaticResource iconfont}"
                                     FontSize="52"
-                                    Foreground="White"
+                                    Foreground="{Binding BackgroundColor}"
                                     Text="&#xe600;" />
 
                                 <!--  状态显示（在线/离线）  -->
                                 <Button
                                     Grid.Row="2"
-                                    Margin="0,0,0,10"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
+                                    Margin="0,0,0,5"
                                     Background="Transparent"
                                     Style="{StaticResource ItemStatus}" />
                             </Grid>

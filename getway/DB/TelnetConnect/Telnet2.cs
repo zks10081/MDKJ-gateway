@@ -1,4 +1,5 @@
 ﻿using getway.Util;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -55,6 +56,9 @@ namespace getway.DB.TelnetConnect
             try
             {
                 Client = new TcpClient();
+                // 同步 Read/Write 的兜底超时，防止对端不发数据时 ns.Read 永久阻塞
+                Client.ReceiveTimeout = 5000;
+                Client.SendTimeout = 5000;
                 // 同步等待连接结果，最多 3 秒，避免界面长时间假死
                 var connectTask = Client.ConnectAsync(hostname, port);
                 if (!connectTask.Wait(3000))
@@ -144,18 +148,41 @@ namespace getway.DB.TelnetConnect
         /// 接收
         /// </summary>
         /// <returns>传回的数据</returns>
-        public string Receive()
+        public string Receive(int waitMs = 1500)
         {
             StringBuilder result = new StringBuilder();
-            if (Connected && ns.CanRead)
+            if (Connected && ns != null && ns.CanRead)
             {
-                byte[] buff = new byte[BuffSize];
-                int numberOfRead = 0;
-                do
+                // 先给设备一点时间把数据吐出来，超时后不再干等
+                int waited = 0;
+                while (!ns.DataAvailable && waited < waitMs)
                 {
-                    numberOfRead = ns.Read(buff, 0, BuffSize);
-                    result.AppendFormat("{0}", Encoding.ASCII.GetString(buff, 0, numberOfRead));
-                } while (ns.DataAvailable);
+                    Thread.Sleep(50);
+                    waited += 50;
+                }
+
+                if (ns.DataAvailable)
+                {
+                    byte[] buff = new byte[BuffSize];
+                    int numberOfRead;
+                    do
+                    {
+                        try
+                        {
+                            numberOfRead = ns.Read(buff, 0, BuffSize);
+                        }
+                        catch (IOException)
+                        {
+                            // 读超时：返回已经读到的部分
+                            break;
+                        }
+
+                        // 0 表示对端已关闭连接
+                        if (numberOfRead <= 0) break;
+
+                        result.Append(Encoding.ASCII.GetString(buff, 0, numberOfRead));
+                    } while (ns.DataAvailable);
+                }
             }
             string info = result.ToString().Trim();
             //处理一些情况

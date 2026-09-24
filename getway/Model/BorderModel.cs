@@ -8,6 +8,9 @@ namespace getway.Model
         private string _BorderName;
         public string BorderName { get => _BorderName; set => SetProperty(ref _BorderName, value); }
 
+        private string _Status;
+        public string Status { get => _Status; set => SetProperty(ref _Status, value); }
+
 
         private int _SlotNo;
         public int SlotNo { get => _SlotNo; set => SetProperty(ref _SlotNo, value); }

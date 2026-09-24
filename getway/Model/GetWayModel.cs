@@ -2,7 +2,7 @@
 
 namespace getway.Model
 {
-    internal class GetWayModel : ViewModelBase
+    public class GetWayModel : ViewModelBase
     {
 
         private int _FrameId;

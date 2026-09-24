@@ -24,7 +24,6 @@ namespace getway.Util
         public static string ConfigPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "config.json");
 
 
-
         public static string Now_Telnet_key = "";
         // Telnet用户名和密码
         public const string BaseUsername = "queryboard"; // 身兼多职：查询业务版，修改热线，批量删除SIP用户，批量增加SIP用户
@@ -42,13 +41,13 @@ namespace getway.Util
         public static string Success_Flag = "dmkj>";
         public static int Telnet_waitTime = 300;
 
-        // SIP用户各种状态的颜色
-        public const string SIPUserBackgroundColorOfRinging = "#ffff00"; // 振铃
-        public const string SIPUserBackgroundColorOfDialing = "#ffc0cb"; // 摘机
-        public const string SIPUserBackgroundColorOfCalling = "#90ee90"; // 通话中
-        public const string SIPUserBackgroundColorOfLocked = "#213740"; // 锁定
-        public const string SIPUserBackgroundColorOfIdle = "#87ceff"; // 空闲
-        public const string SIPUserBackgroundColorOfUnOnline = "#bebebe"; // 注册失败，离线
+        // SIP用户各种状态的颜色（与 IpcItemView.xaml 中 ItemStatus 的状态色保持一致）
+        public const string SIPUserBackgroundColorOfRinging = "#FFC107"; // 振铃：琥珀黄（亮底，配深字）
+        public const string SIPUserBackgroundColorOfDialing = "#FF7BA6"; // 摘机：玫粉（亮底，配深字）
+        public const string SIPUserBackgroundColorOfCalling = "#2fa96b"; // 通话中：绿
+        public const string SIPUserBackgroundColorOfLocked = "#213740"; // 锁定：hei
+        public const string SIPUserBackgroundColorOfIdle = "#87ceff"; // 空闲：蓝
+        public const string SIPUserBackgroundColorOfUnOnline = "#7A8A9A"; // 注册失败，离线：灰蓝
         // SIP用户的6种注册状态
         public const string Initializing = "Initializing"; // 初始态
         public const string Registering = "Registering"; // 正在注册中
@@ -66,6 +65,17 @@ namespace getway.Util
         public const string Connected = "Connected"; // 通话已建立
         public const string Disconnecting = "Disconnecting"; // 正在释放连接
         public const string Locked = "Locked"; // 用户锁定
+
+        public static Dictionary<string, string> SipUserStatusDict = new Dictionary<string, string>()
+        {
+            {"1",SIPUserBackgroundColorOfRinging},
+            {"2",SIPUserBackgroundColorOfDialing},
+            {"3",SIPUserBackgroundColorOfCalling},
+            {"4",SIPUserBackgroundColorOfLocked},
+            {"5",SIPUserBackgroundColorOfIdle},
+            {"0",SIPUserBackgroundColorOfUnOnline}
+        };
+
 
 
     }

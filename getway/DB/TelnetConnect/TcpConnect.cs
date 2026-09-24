@@ -54,6 +54,11 @@ namespace getway.DB.TelnetConnect
 
         }
 
+        /// <summary>
+        /// 根据key获得对应连接的结果
+        /// </summary>
+        /// <param name="key"></param>
+        /// <returns></returns>
         public static string Receive(String key)
         {
             if (TelnetPool.ContainsKey(key))
@@ -61,6 +66,17 @@ namespace getway.DB.TelnetConnect
                 return TelnetPool[key].Receive();
             }
             return String.Empty;
+        }
+
+        public static void CloseTelnetByIp(string ip)
+        {
+            foreach (string key in TelnetPool.Keys)
+            {
+                if (key.Contains(ip))
+                {
+                    TelnetPool[key].Close();
+                }
+            }
         }
 
         /// <summary>
@@ -76,7 +92,7 @@ namespace getway.DB.TelnetConnect
         /// 删除连接池所有连接
         /// </summary>
         /// <param name="key"></param>
-        public static void CloseAll(string key)
+        public static void CloseAll()
         {
             foreach (var item in TelnetPool.Keys)
             {

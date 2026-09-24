@@ -2,12 +2,8 @@
 using getway.DB.Pg;
 using getway.Model;
 using getway.Util;
-using System;
-using System.Collections.Generic;
+using getway.View;
 using System.Collections.ObjectModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 
@@ -17,12 +13,12 @@ namespace getway.ViewModel
     {
         private string _GetwayIp;
 
-        ObservableCollection<string> _NowGatewayList;
+        ObservableCollection<GetWayModel> _NowGatewayList;
 
 
         public string GetwayIp { get => _GetwayIp; set => SetProperty(ref _GetwayIp, value); }
 
-        public AddGetwayViewModel(ObservableCollection<string> list)
+        public AddGetwayViewModel(ObservableCollection<GetWayModel> list)
         {
             _NowGatewayList = list;
         }
@@ -36,19 +32,24 @@ namespace getway.ViewModel
             }
             foreach (var item in _NowGatewayList)
             {
-                if (item == _GetwayIp)
+                if (item.IP == _GetwayIp)
                 {
-                    //DMMessageBox.ShowWaring("IP 地址为 " + InputGatewayIP + " 的网关已存在");
+                    MessageView.ShowWaring("IP 地址为 " + _GetwayIp + " 的网关已存在");
                     return;
                 }
             }
+            GetWayModel mode = new GetWayModel
+            {
+                IP = _GetwayIp,
+                FrameId = DefaulConfig.FrameId,
+            };
 
             GetWayDB.AddGatewayModel(new GetWayModel
             {
                 IP = _GetwayIp,
                 FrameId = DefaulConfig.FrameId,
             });
-            _NowGatewayList.Add(_GetwayIp);
+            _NowGatewayList.Add(mode);
 
             Window window = (Window)param;
             window.Close();

@@ -27,6 +27,12 @@
             <Setter Property="FontSize" Value="11" />
             <Setter Property="Foreground" Value="White" />
         </Style>
+        <Style x:Key="StatusDescText" TargetType="TextBlock">
+            <Setter Property="Margin" Value="5,0,20,0" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Foreground" Value="#b8c8d8" />
+        </Style>
 
         <!--  面板内容区  -->
         <Style x:Key="PanelBody" TargetType="Border">
@@ -122,21 +128,110 @@
     </UserControl.Resources>
     <Grid Margin="12,0,12,12">
         <Grid.RowDefinitions>
+            <RowDefinition Height="60" />
+            <RowDefinition Height="10" />
             <RowDefinition Height="40" />
+            <RowDefinition Height="10" />
             <RowDefinition />
         </Grid.RowDefinitions>
-
         <TextBlock
             Grid.Row="0"
             HorizontalAlignment="Center"
             VerticalAlignment="Center"
             FontFamily="{StaticResource tihei}"
-            FontSize="24"
+            FontSize="36"
             FontWeight="Bold"
             Foreground="#FFFFFF"
             Text="语音网关管理系统" />
 
-        <Grid Grid.Row="1">
+        <Grid Grid.Row="2">
+
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1*" />
+                <ColumnDefinition Width="1*" />
+                <ColumnDefinition Width="1*" />
+
+            </Grid.ColumnDefinitions>
+
+            <StackPanel
+                Grid.Column="0"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Orientation="Horizontal">
+                <TextBlock
+                    x:Name="tbTime"
+                    FontFamily="{StaticResource tihei}"
+                    FontSize="24"
+                    Style="{StaticResource PanelHeaderText}"
+                    Text="2000-1-1 0:00:00" />
+            </StackPanel>
+            <StackPanel
+                Grid.Column="1"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Orientation="Horizontal">
+                <Border
+                    Width="10"
+                    Height="10"
+                    Background="Green"
+                    CornerRadius="1000" />
+                <TextBlock
+                    FontSize="24"
+                    Style="{StaticResource PanelHeaderText}"
+                    Text="IP 电话用户" />
+            </StackPanel>
+            <Border
+                Grid.Column="2"
+                Margin="0,0"
+                Padding="10,5"
+                HorizontalAlignment="Right"
+                Style="{StaticResource PanelBody}">
+                <StackPanel
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"
+                    Orientation="Horizontal">
+                    <Border
+                        Width="10"
+                        Height="10"
+                        Background="#87ceff"
+                        CornerRadius="1000" />
+                    <TextBlock Style="{StaticResource StatusDescText}" Foreground="#4A3500" Text="空闲" />
+                    <Border
+                        Width="10"
+                        Height="10"
+                        Background="#ffff00"
+                        CornerRadius="1000" />
+                    <TextBlock Style="{StaticResource StatusDescText}" Text="振铃" />
+                    <Border
+                        Width="10"
+                        Height="10"
+                        Background="#90ee90"
+                        CornerRadius="1000" />
+                    <TextBlock Style="{StaticResource StatusDescText}" Text="通话" />
+                    <Border
+                        Width="10"
+                        Height="10"
+                        Background="#ffc0cb"
+                        CornerRadius="1000" />
+                    <TextBlock Style="{StaticResource StatusDescText}" Text="摘机" />
+                    <Border
+                        Width="10"
+                        Height="10"
+                        Background="#bebebe"
+                        CornerRadius="1000" />
+                    <TextBlock Style="{StaticResource StatusDescText}" Text="离线" />
+                    <Border
+                        Width="10"
+                        Height="10"
+                        Background="#213740"
+                        CornerRadius="1000" />
+                    <TextBlock Style="{StaticResource StatusDescText}" Text="锁机" />
+                </StackPanel>
+            </Border>
+
+        </Grid>
+
+        <Grid Grid.Row="4">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="200" />
                 <ColumnDefinition Width="*" />
@@ -144,7 +239,7 @@
             </Grid.ColumnDefinitions>
 
             <!--  网关ip列表  -->
-            <Grid Grid.Column="0">
+            <Grid Grid.Column="0" Margin="0,10,0,0">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="24" />
                     <RowDefinition Height="10" />
@@ -197,30 +292,14 @@
 
             <!--  ipc电话内容  -->
             <Grid Grid.Column="1" Margin="10,0">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="24" />
-                    <RowDefinition Height="10" />
-                    <RowDefinition />
-                </Grid.RowDefinitions>
-                <Border Style="{StaticResource PanelHeader}">
-                    <StackPanel
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center"
-                        Orientation="Horizontal">
-                        <TextBlock Style="{StaticResource PanelHeaderIcon}" Text="&#xe600;" />
-                        <TextBlock Style="{StaticResource PanelHeaderText}" Text="IP 电话用户" />
-                    </StackPanel>
-                </Border>
-                <Border
-                    Grid.Row="2"
-                    Background="Transparent"
-                    CornerRadius="5">
+
+                <Border Background="Transparent" CornerRadius="5">
                     <local:IpcItemView DataContext="{Binding IpcItemVM}" />
                 </Border>
             </Grid>
 
             <!--  操作控制  -->
-            <Grid Grid.Column="2">
+            <Grid Grid.Column="2" Margin="0,10,0,0">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="24" />
                     <RowDefinition Height="10" />
@@ -257,11 +336,21 @@
                         Content="查询sip用户"
                         Style="{StaticResource ButtonStyle}"
                         Tag="&#xe626;" />
-                    <TextBox Text="{Binding AnyCommandString}" Style="{StaticResource CommandInputStyle}" />
+                    <TextBox Style="{StaticResource CommandInputStyle}" Text="{Binding AnyCommandString}" />
                     <Button
                         Margin="0"
                         Command="{Binding QueryCommand}"
                         Content="执行命令"
+                        Style="{StaticResource ButtonStyle}"
+                        Tag="&#xe626;" />
+                    <Button
+                        Command="{Binding AddGetwayCommand}"
+                        Content="添加网关"
+                        Style="{StaticResource ButtonStyle}"
+                        Tag="&#xe626;" />
+                    <Button
+                        Command="{Binding DeleteGetwayCommand}"
+                        Content="删除网关"
                         Style="{StaticResource ButtonStyle}"
                         Tag="&#xe626;" />
                 </StackPanel>

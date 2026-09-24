@@ -1,13 +1,19 @@
-﻿<Window x:Class="getway.View.MessageView"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:getway.View"
-        mc:Ignorable="d"
-        WindowStartupLocation="CenterScreen"
-        WindowStyle="None"
-        Title="MessageView" Height="240" Width="auto" MinWidth="200">
+﻿<Window
+    x:Class="getway.View.MessageView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="clr-namespace:getway.View"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    Title="MessageView"
+    Height="240"
+    MinWidth="300"
+    MaxWidth="620"
+    SizeToContent="Width"
+    ResizeMode="NoResize"
+    WindowStartupLocation="CenterScreen"
+    WindowStyle="None"
+    mc:Ignorable="d">
     <WindowChrome.WindowChrome>
         <!--  CaptionHeight 对应标题栏行高，整窗可拖动；按钮用 IsHitTestVisibleInChrome 收回点击权  -->
         <WindowChrome
@@ -41,9 +47,9 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border
-                     Name="bg"
-                     Background="{TemplateBinding Background}"
-                     BorderThickness="{TemplateBinding BorderThickness}">
+                            Name="bg"
+                            Background="{TemplateBinding Background}"
+                            BorderThickness="{TemplateBinding BorderThickness}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
@@ -60,16 +66,16 @@
         </Style>
 
         <Style
-             x:Key="CloseButtonStyle"
-             BasedOn="{StaticResource CaptionButtonStyle}"
-             TargetType="Button">
+            x:Key="CloseButtonStyle"
+            BasedOn="{StaticResource CaptionButtonStyle}"
+            TargetType="Button">
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border
-                             Name="bg"
-                             Background="{TemplateBinding Background}"
-                             BorderThickness="{TemplateBinding BorderThickness}">
+                            Name="bg"
+                            Background="{TemplateBinding Background}"
+                            BorderThickness="{TemplateBinding BorderThickness}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
@@ -113,7 +119,7 @@
             <Setter Property="VerticalContentAlignment" Value="Center" />
         </Style>
 
-        <Style x:Key="LoginButtonStyle" TargetType="Button">
+        <Style x:Key="ButtonStyle" TargetType="Button">
             <Setter Property="Height" Value="36" />
             <Setter Property="Background" Value="#FFA500" />
             <Setter Property="Foreground" Value="#072748" />
@@ -149,43 +155,87 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="32" />
             <RowDefinition Height="1*" />
-            <RowDefinition Height="3*"/>
+            <RowDefinition Height="3*" />
         </Grid.RowDefinitions>
         <!--  标题栏  -->
         <Grid Grid.Row="0" Background="#002F54">
             <TextBlock
-                 Margin="12,0"
-                 VerticalAlignment="Center"
-                 FontSize="12"
-                 Foreground="{StaticResource SecondaryText}"
-                 Text="{Binding TitleText}" />
-            <StackPanel
-                 HorizontalAlignment="Right"
-                 Orientation="Horizontal"
-                 WindowChrome.IsHitTestVisibleInChrome="True">
-                <Button
-                     Click="CloseButton_Click"
-                     Content="&#xe654;"
-                     Style="{StaticResource CloseButtonStyle}"
-                     ToolTip="关闭" />
+                Margin="12,0"
+                VerticalAlignment="Center"
+                FontSize="12"
+                Foreground="{StaticResource SecondaryText}"
+                Text="提示弹窗" />
+        </Grid>
+
+        <Grid
+            Grid.Row="1"
+            Width="auto"
+            VerticalAlignment="Center">
+            <StackPanel HorizontalAlignment="Left">
+                <TextBlock
+                    Margin="30,0,0,0"
+                    HorizontalAlignment="Center"
+                    FontSize="24"
+                    Style="{StaticResource FieldLabelStyle}"
+                    Text="{Binding MsgTitle}" />
+
             </StackPanel>
         </Grid>
 
-        <Grid Grid.Row="1" Width="auto" VerticalAlignment="Center">
-            <StackPanel>
-                <TextBlock Style="{StaticResource FieldLabelStyle}" HorizontalAlignment="Center" Text="网关IP"  FontSize="24"/>
-                
-            </StackPanel>
-        </Grid>
-
-        <Grid Grid.Row="2" HorizontalAlignment="Center">
+        <Grid Grid.Row="2">
             <Grid.RowDefinitions>
-                <RowDefinition Height="2*"/>
-                <RowDefinition Height="1*"/>
+                <RowDefinition Height="2*" />
+                <RowDefinition Height="1*" />
 
             </Grid.RowDefinitions>
-            <TextBlock Grid.Row="0" Text="{Binding MessageInfo}"/>
-            <Button Grid.Row="1"  Content="取消" Command="{Binding ColseGetWay}" Style="{StaticResource LoginButtonStyle}" Background="LightGray" Width="100" />
+            <Border
+                Grid.Row="0"
+                Margin="5"
+                HorizontalAlignment="Stretch"
+                BorderBrush="LightGray"
+                BorderThickness="2"
+                CornerRadius="5">
+                <StackPanel
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Orientation="Horizontal">
+                    <TextBlock
+                        Margin="0,2,5,0"
+                        FontFamily="{StaticResource iconfont}"
+                        FontSize="24"
+                        Foreground="{Binding IconColor}"
+                        Text="{Binding IconText}" />
+                    <TextBlock
+                        MaxWidth="420"
+                        Margin="0,6,0,0"
+                        FontSize="14"
+                        Foreground="White"
+                        Text="{Binding Info}"
+                        TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+            <Grid Grid.Row="1">
+                <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
+                    <Button
+                        Width="80"
+                        Height="30"
+                        Margin="5,0"
+                        Background="Orange"
+                        Click="OkButton_Click"
+                        Content="确定"
+                        Style="{StaticResource ButtonStyle}"
+                        Visibility="{Binding OkShow}" />
+                    <Button
+                        Width="80"
+                        Height="30"
+                        Margin="5,0"
+                        Background="LightGray"
+                        Click="CancelButton_Click"
+                        Content="取消"
+                        Style="{StaticResource ButtonStyle}"
+                        Visibility="{Binding CanclShow}" />
+                </StackPanel>
+            </Grid>
 
         </Grid>
 

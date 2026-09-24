@@ -1,11 +1,13 @@
 using CommunityToolkit.Mvvm.Input;
+using getway.Base;
 using getway.DB.Pg;
 using getway.DB.TelnetConnect;
 using getway.Model;
 using getway.Util;
+using getway.View;
+using System.Collections.ObjectModel;
 using System.Text;
 using System.Windows.Input;
-using System.Windows.Threading;
 
 namespace getway.ViewModel
 {
@@ -16,8 +18,8 @@ namespace getway.ViewModel
         private const int ConnectTimeoutMs = 8000;
         private const int QueryTimeoutMs = 15000;
 
-        private List<GetWayModel> _GetWayList = new List<GetWayModel>();
-        public List<GetWayModel> GetWayList { get => _GetWayList; set => SetProperty(ref _GetWayList, value); }
+        private ObservableCollection<GetWayModel> _GetWayList = new ObservableCollection<GetWayModel>();
+        public ObservableCollection<GetWayModel> GetWayList { get => _GetWayList; set => SetProperty(ref _GetWayList, value); }
 
         public AsyncRelayCommand AddConnectCommand { get; set; }
         public ICommand QueryBoardCommand { get; set; }
@@ -40,6 +42,8 @@ namespace getway.ViewModel
 
         // 子 ViewModel：由父 ViewModel 持有，在连接建立后再注入 key
         public IpcItemViewModel IpcItemVM { get; }
+
+        private readonly Random _random = new Random();
 
         private string _GetWayIp = string.Empty;
         public string GetWayIp
@@ -70,19 +74,22 @@ namespace getway.ViewModel
             QuerySIPUserCommand = new AsyncRelayCommand(QuerySipUser);
             QueryCommand = new AsyncRelayCommand(QueryAnyCommand);
 
+            AddGetwayCommand = new Command(AddGetway);
+            DeleteGetwayCommand = new Command(DeleteGetway);
+
             _ = InitAsync();
         }
 
-        //加载网关列表，并默认连上第一个网关
+        //加载网关列表
         private async Task InitAsync()
         {
             try
             {
-                GetWayList = await Task.Run(GetWayDB.QueryGetWayList);
+                GetWayList = new ObservableCollection<GetWayModel>(await Task.Run(GetWayDB.QueryGetWayList));
             }
             catch (Exception ex)
             {
-                GetWayList = new List<GetWayModel>();
+                GetWayList = new ObservableCollection<GetWayModel>();
                 AppendLog("网关列表加载失败：" + ex.Message);
                 return;
             }
@@ -113,6 +120,11 @@ namespace getway.ViewModel
 
             try
             {
+                //清空连接池
+                TcpConnect.CloseAll();
+                //终止所有查询
+                IpcItemVM.InitQueryTag();
+
                 var connectTask = Task.Run(() => TcpConnect.AddTelnet(key, ip, "root", "mduadmin"));
                 if (await Task.WhenAny(connectTask, Task.Delay(ConnectTimeoutMs)) != connectTask)
                 {
@@ -198,18 +210,57 @@ namespace getway.ViewModel
             }
             return true;
         }
+        public void InitGetWayList()
+        {
+            for (int i = 0; i < 4; i++)
+            {
+                String randomIp = $"{_random.Next(256)}.{_random.Next(256)}.{_random.Next(256)}.{_random.Next(256)}";
+
+            }
+        }
 
 
         //---------------------网关操控--------------------------
-        public AsyncRelayCommand AddGetwayCommand { get; set; }//添加网关
-        public AsyncRelayCommand DeleteGetwayCommand { get; set; }//删除网关
-        public AsyncRelayCommand SaveConfigCommand { get; set; }//保存配置
-        public AsyncRelayCommand bohaoCommand { get; set; }//拨号
+        public ICommand AddGetwayCommand { get; set; }//添加网关
+        public ICommand DeleteGetwayCommand { get; set; }//删除网关
+        public ICommand SaveConfigCommand { get; set; }//保存配置
+        public ICommand bohaoCommand { get; set; }//拨号
 
 
-        public void AddGetway()
+        public void AddGetway(object paramter)
         {
-            GetWayDB.AddGatewayModel(new GetWayModel());
+            AddGetwayView addGetway = new AddGetwayView(GetWayList);
+            addGetway.Show();
+
+        }
+
+        public void DeleteGetway(object paramter)
+        {
+            if (string.IsNullOrEmpty(GetWayIp))
+            {
+                AppendLog("未选择网关");
+                return;
+            }
+            bool result = MessageView.ShowSelect("删除网关", "是否确认删除？");
+            if (result)
+            {
+                GetWayDB.DeleteOne(GetWayIp);
+
+                for (int i = 0; i < GetWayList.Count; i++)
+                {
+                    if (GetWayList[i].Equals(GetWayIp))
+                    {
+                        GetWayList.RemoveAt(i);
+
+
+
+                        //删除对应ip的连接
+                        TcpConnect.CloseTelnetByIp(GetWayIp);
+                    }
+                }
+
+                //MessageView.ShowSuccess($"网关 {GetWayIp} 已删除!");
+            }
 
         }
 

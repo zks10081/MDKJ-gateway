@@ -1,4 +1,5 @@
 ﻿using getway.Model;
+using System.Collections.ObjectModel;
 using System.Data;
 
 namespace getway.DB.Pg
@@ -6,9 +7,9 @@ namespace getway.DB.Pg
     internal class GetWayDB
     {
 
-        public static List<GetWayModel> QueryGetWayList()
+        public static ObservableCollection<GetWayModel> QueryGetWayList()
         {
-            List<GetWayModel> list = new List<GetWayModel>();
+            ObservableCollection<GetWayModel> list = new ObservableCollection<GetWayModel>();
             string querySql = "select f,server_ip as ip from dm_server_monitor where select_subzone = '网关'";
             DataTable dataTable = PgConnect.SelectAsync(querySql)
                 ?? throw new InvalidOperationException("数据库无响应，请检查网关地址与连接");
