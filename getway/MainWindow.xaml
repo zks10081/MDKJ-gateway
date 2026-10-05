@@ -205,7 +205,8 @@
             HorizontalAlignment="Right"
             VerticalAlignment="Center"
             Content="退出"
-            Style="{StaticResource ExitButtonStyle}" />
+            Style="{StaticResource ExitButtonStyle}" 
+            Click="CloseButton_Click"/>
         <Button
             Margin="80,0"
             HorizontalAlignment="Right"

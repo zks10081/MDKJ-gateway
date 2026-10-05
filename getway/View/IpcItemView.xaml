@@ -120,7 +120,8 @@
             <ItemsControl
                 Margin="6"
                 d:ItemsSource="{d:SampleData ItemCount=64}"
-                ItemsSource="{Binding IpcUserList}">
+                ItemsSource="{Binding IpcUserList}"
+                >
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
                         <WrapPanel ItemHeight="112" ItemWidth="112" />
@@ -129,7 +130,7 @@
 
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <Button Background="Transparent" BorderBrush="Transparent">
+                        <Button Background="Transparent" BorderBrush="Transparent" Command="{Binding EditchSipUserCommand}">
                             <Grid
                                 Width="104"
                                 Height="104"

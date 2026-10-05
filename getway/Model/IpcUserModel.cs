@@ -44,10 +44,10 @@ namespace getway.Model
         public int Index;
 
         //注册状态
-        public string Regite;
+        public string RegiteStatus;
 
         //呼叫状态
-        public string call;
+        public string CallStatus;
 
         public void SetBackgroundColorByState(string regState, string callState)
         {
@@ -88,6 +88,14 @@ namespace getway.Model
                 Status = "0";
             }
         }
+
+
+        //---------------------------------热线属性-------------------------
+
+
+        public string HotlinePhone;
+
+        public string HotlineTime;
 
 
     }

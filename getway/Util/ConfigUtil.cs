@@ -47,7 +47,50 @@ namespace getway.Util
             return false;
         }
 
-        
+        /// <summary>
+        /// 判断字符串是否属于电话号码的规则
+        ///     - 1. 1-24位字符串
+        ///     - 2. 由 0-9 组成
+        /// </summary>
+        /// <param name="str"></param>
+        /// <returns></returns>
+        public static bool IsPhoneNum(string str)
+        {
+            if (str == null || str == "")
+            {
+                return false;
+            }
+
+            Regex rx = new Regex(@"[\d#*]{1,24}");
+
+            if (rx.IsMatch(str))
+            {
+                return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// 判断字符串是否属于电话号码的规则
+        ///     - 1. 1-60秒
+        /// </summary>
+        /// <param name="str"></param>
+        /// <returns></returns>
+        public static bool IsHotTime(string str)
+        {
+            if (str == null || str == "")
+            {
+                return false;
+            }
+
+            Regex rx = new Regex(@"^(([1-9]|[1-5]\d)|60)");
+
+            if (rx.IsMatch(str))
+            {
+                return true;
+            }
+            return false;
+        }
 
 
     }

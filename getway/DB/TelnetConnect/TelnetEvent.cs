@@ -1,11 +1,19 @@
-﻿using getway.Model;
+﻿using getway.Base;
+using getway.Model;
 using System.Collections.ObjectModel;
 using System.Text.RegularExpressions;
+using System.Windows.Controls;
+using System.Windows.Input;
 
 namespace getway.DB.TelnetConnect
 {
     class TelnetEvent
     {
+        /// <summary>
+        /// 查询板卡信息
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="slotid"></param>
 
         public static void QueryBoard(string key, int slotid)
         {
@@ -18,6 +26,12 @@ namespace getway.DB.TelnetConnect
             //telnet.Send("quit" + Environment.NewLine);
         }
 
+        /// <summary>
+        /// 查询sip用户注册信息
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="slotid"></param>
+        /// <param name="borderid"></param>
         public static void QuerySipUser(string key, int slotid, int borderid)
         {
             Telnet2 telnet = TcpConnect.GetTelnet(key);
@@ -27,7 +41,28 @@ namespace getway.DB.TelnetConnect
             telnet.Send($"display sippstnuser reg-state {slotid}/{borderid}/0 {slotid}/{borderid}/63" + Environment.NewLine);
             //telnet.Send("quit" + Environment.NewLine);
         }
+        /// <summary>
+        /// 查询sip用户呼叫状态
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="slotid"></param>
+        /// <param name="borderid"></param>
+        public static void QuerySipUserCall(string key, int slotid, int borderid)
+        {
+            Telnet2 telnet = TcpConnect.GetTelnet(key);
 
+            telnet.Send("enable" + Environment.NewLine);
+            string result = telnet.Receive();
+            telnet.Send($"display sippstnuser call {slotid}/{borderid}/0 {slotid}/{borderid}/63" + Environment.NewLine);
+            //telnet.Send("quit" + Environment.NewLine);
+        }
+
+        /// <summary>
+        /// 任意指令执行
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="command"></param>
+        /// <returns></returns>
         public static async Task<string> AnyCommand(string key, string command)
         {
             Telnet2 telnet = TcpConnect.GetTelnet(key);
@@ -39,6 +74,191 @@ namespace getway.DB.TelnetConnect
             return result;
         }
 
+        /// <summary>
+        /// 重置权限
+        /// </summary>
+        /// <param name="key"></param>
+        public static void ResetPerm(string key)
+        {
+            Telnet2 telnet = TcpConnect.GetTelnet(key);
+            if (telnet == null) return;
+
+
+            telnet.Send("quit" + Environment.NewLine);
+
+        }
+
+        /// <summary>
+        /// 查询热线配置信息
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="boardport"></param>
+        /// <param name="userphone"></param>
+        public static void QueryHotLine(string key, string boardport, string userphone)
+        {
+            Telnet2 telnet = TcpConnect.GetTelnet(key);
+            string result = string.Empty;
+
+            telnet.Send("enable" + Environment.NewLine);
+            result = telnet.Receive();
+            telnet.Send("esl user" + Environment.NewLine);//进入esl user模式
+            result = telnet.Receive();
+
+            telnet.Send($"display sippstnuser servicedata {boardport} telno {userphone}" + Environment.NewLine);
+
+        }
+
+        /// <summary>
+        /// 修改sip用户号码
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="boardport"></param>
+        /// <param name="olduserphone"></param>
+        /// <param name="userphone"></param>
+        public static void EditSipUserPhone(string key, string boardport, string olduserphone, string userphone)
+        {
+            Telnet2 telnet = TcpConnect.GetTelnet(key);
+            string result = string.Empty;
+
+            telnet.Send("enable" + Environment.NewLine);
+            result = telnet.Receive();
+            telnet.Send("esl user" + Environment.NewLine);//进入esl user模式
+            result = telnet.Receive();
+
+            telnet.Send($"sippstnuser modify {boardport} mgid {olduserphone} telno {userphone}" + Environment.NewLine);
+
+        }
+
+        /// <summary>
+        /// 配置摘机热线
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="boardport"></param>
+        /// <param name="userphone"></param>
+        /// <param name="hotlinephone"></param>
+        /// <param name="hotlinetime"></param>
+        public static void EditHotLine(string key, string boardport, string userphone, string hotlinephone, string hotlinetime)
+        {
+            Telnet2 telnet = TcpConnect.GetTelnet(key);
+            string result = string.Empty;
+            telnet.Send("enable" + Environment.NewLine);
+            result = telnet.Receive();
+            telnet.Send("esl user" + Environment.NewLine);//进入esl user模式
+            result = telnet.Receive();
+            telnet.Send($"sippstnuser rightflag set {boardport} telno {userphone} hotline enable" + Environment.NewLine);
+            Thread.Sleep(300);
+            telnet.Receive();
+            telnet.Send($"sippstnuser servicedata parameter set {boardport} telno {userphone} hottime {hotlinetime} hotlinenum {hotlinephone}" + Environment.NewLine);
+            Thread.Sleep(300);
+            telnet.Receive();
+
+        }
+
+        /// <summary>
+        /// 查询拨号计划
+        /// </summary>
+        /// <param name="key"></param>
+        public static void DigitMapQuery(string key)
+        {
+            Telnet2 telnet = TcpConnect.GetTelnet(key);
+            string result = string.Empty;
+
+            telnet.Send("enable" + Environment.NewLine);
+            result = telnet.Receive();
+            telnet.Send("config" + Environment.NewLine);//进入config模式
+            result = telnet.Receive();
+
+            telnet.Send($"display local-digitmap all" + Environment.NewLine);
+
+        }
+
+        /// <summary>
+        /// 添加拨号计划
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="digitName"></param>
+        /// <param name="ruletext"></param>
+        public static void DigitMapAdd(string key,string digitName,string ruletext)
+        {
+            Telnet2 telnet = TcpConnect.GetTelnet(key);
+            string result = string.Empty;
+
+            telnet.Send("enable" + Environment.NewLine);
+            result = telnet.Receive();
+            telnet.Send("config" + Environment.NewLine);//进入config模式
+            result = telnet.Receive();
+
+            telnet.Send($"local-digitmap add {digitName} normal {ruletext}" + Environment.NewLine);
+
+        }
+
+        /// <summary>
+        /// 根据名称删除拨号计划
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="digitName"></param>
+        public static void DigitMapDelet(string key, string digitName)
+        {
+            Telnet2 telnet = TcpConnect.GetTelnet(key);
+            string result = string.Empty;
+
+            telnet.Send("enable" + Environment.NewLine);
+            result = telnet.Receive();
+            telnet.Send("config" + Environment.NewLine);//进入config模式
+            result = telnet.Receive();
+
+            telnet.Send($"local-digitmap delete name {digitName}" + Environment.NewLine);
+
+        }
+
+        /// <summary>
+        /// 删除全部拨号计划
+        /// </summary>
+        /// <param name="key"></param>
+        public static void DigitMapDeletAll(string key)
+        {
+            Telnet2 telnet = TcpConnect.GetTelnet(key);
+            string result = string.Empty;
+
+            telnet.Send("enable" + Environment.NewLine);
+            result = telnet.Receive();
+            telnet.Send("config" + Environment.NewLine);//进入config模式
+            result = telnet.Receive();
+
+            telnet.Send($"local-digitmap delete all" + Environment.NewLine);
+
+        }
+
+
+        //---------------------------sip用户操控--------------------------
+
+        /// <summary>
+        /// 删除全部SIP用户
+        /// </summary>
+        /// <param name="key"></param>
+        public static async Task SipUserDeleteAll(string key,string frameid,string slotid)
+        {
+            Telnet2 telnet = TcpConnect.GetTelnet(key);
+            string result = string.Empty;
+
+            telnet.Send("enable" + Environment.NewLine);
+            result = telnet.Receive();
+            telnet.Send("config" + Environment.NewLine);//进入config模式
+            result = telnet.Receive();
+            telnet.Send("esl user" + Environment.NewLine);//进入esl user模式
+            result = telnet.Receive();
+
+            telnet.Send($"sippstnuser batdel {frameid}/{slotid}/0 {frameid}/{slotid}/63" + Environment.NewLine);
+
+        }
+
+        /// <summary>
+        /// 添加用SIP户
+        /// </summary>
+        public static void SipUserAdd()
+        {
+
+        }
 
 
 
@@ -90,6 +310,7 @@ namespace getway.DB.TelnetConnect
 
 
         /// <summary>
+        /// 解析处理SIP用户注册信息
         /// SIP 用户信息：更新已存在对象的属性，靠 IpcUserModel 的 PropertyChanged 推送到界面。
         /// 不能用 new 出来的对象替换 List[index]——集合不发通知，界面就"收不到"数据。
         /// </summary>
@@ -135,16 +356,94 @@ namespace getway.DB.TelnetConnect
                 IpcUserModel model = List[index];
 
                 // 内容没变就不写，避免每轮轮询刷一堆无意义的通知
-                if (model.Regite == regState) continue;
+                if (model.RegiteStatus == regState) continue;
 
                 model.Name = string.IsNullOrEmpty(name) ? null : name;
-                model.Regite = string.IsNullOrEmpty(regState) ? null : regState;
+                model.RegiteStatus = string.IsNullOrEmpty(regState) ? null : regState;
                 model.FSP = fsp;
                 model.Index = index;
 
-                model.SetBackgroundColorByState(model.Regite, model.call);
+                //根基注册状态和呼叫状态，计算设备状态
+                model.SetBackgroundColorByState(model.RegiteStatus, model.CallStatus);
             }
 
         }
+
+        /// <summary>
+        /// 解析处理用户呼叫信息
+        /// SIP 用户信息：更新已存在对象的属性，靠 IpcUserModel 的 PropertyChanged 推送到界面。
+        /// </summary>
+        public static void SipUserCallString(string result, ObservableCollection<IpcUserModel> List)
+        {
+            if (string.IsNullOrWhiteSpace(result)) return;
+
+            // 1. 删除真实 ESC 控制字符
+            result = Regex.Replace(result, @"[\x1b\x00-\x1f\x7f]+", "");
+
+            // 2. 删除字面 ANSI 序列，例如 [37D
+            result = Regex.Replace(result, @"\[\d+[A-Za-z]", "");
+
+            // 3. 删除分页提示，例如 ---- More ( Press 'Q' to break ) ----
+            //result = Regex.Replace(result, @"----\s*More.*?----", "");
+            result = Regex.Replace(result, @"----\s*More\s*\(.*?\)\s*----\s*", "");
+
+            //直接把数据里的超长空格替换为单个空格，并去除首尾空格
+            result = Regex.Replace(result, @"\s+", " ").Trim();
+
+            // 4. 使用正则提取所有符合条件的数据
+            // 逻辑：跳过命令提示符(如 enabledmkj#)，匹配 0  /1 /0    0    Connected        SecondaryConnected   8002  这种格式
+            var pattern = @"(?<!enabledmkj#)\b(\d+)\s*/\s*(\d+)\s*/\s*(\d+)\s+(\d+)\s+(\S+)\s+(\S+)\s+(\d+)";
+
+            var matches = Regex.Matches(result, pattern);
+
+
+            foreach (Match match in matches)
+            {
+
+                // 排除掉命令提示符那一行的干扰（双重保险）
+                if (match.Value.StartsWith("enabledmkj") || match.Value.StartsWith("dmkj")) continue;
+
+                // "0/1/63" 里第三个数才是用户序号（第二个数是板卡槽位，64 个用户会全挤到同一格）
+                if (!int.TryParse(match.Groups[3].Value, out int index)) continue;
+                if (index < 0 || index >= List.Count) continue;
+
+                // 回显形如 "0  /1 /0    0    Connected        SecondaryConnected   8002 "：共匹配7组，第5是呼叫状态，第7是分机号
+                string name = match.Groups[7].Value;
+                string CallState = match.Groups[5].Value;
+                string fsp = $"{match.Groups[1].Value}/{match.Groups[2].Value}/{match.Groups[3].Value}";
+
+                IpcUserModel model = List[index];
+
+                // 内容没变就不写，避免每轮轮询刷一堆无意义的通知
+                if (model.CallStatus == CallState) continue;
+
+                model.Name = string.IsNullOrEmpty(name) ? null : name;
+                model.CallStatus = string.IsNullOrEmpty(CallState) ? null : CallState;
+                model.FSP = fsp;
+                model.Index = index;
+
+                //根基注册状态和呼叫状态，计算设备状态
+                model.SetBackgroundColorByState(model.RegiteStatus, model.CallStatus);
+            }
+
+        }
+
+        /// <summary>
+        /// 热线信息解析
+        /// </summary>
+        public static void HotlineString(string result, IpcUserModel model)
+        {
+            if (string.IsNullOrWhiteSpace(result)) return;
+
+            var lines = result.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
+
+            foreach (var line in lines)
+            {
+
+            }
+        }
+
     }
+
+
 }

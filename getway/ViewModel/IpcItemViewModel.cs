@@ -1,9 +1,13 @@
+using DMGatewayDemo.Util;
 using getway.Base;
 using getway.DB.TelnetConnect;
 using getway.Model;
 using getway.Util;
+using getway.View;
 using System.Collections.ObjectModel;
+using System.Windows;
 using System.Windows.Input;
+using static System.Net.WebRequestMethods;
 
 namespace getway.ViewModel
 {
@@ -17,6 +21,7 @@ namespace getway.ViewModel
         private ObservableCollection<BorderModel> _BorderList = new ObservableCollection<BorderModel>();
         public ObservableCollection<BorderModel> BorderList { get => _BorderList; set => SetProperty(ref _BorderList, value); }
 
+        public string BoardNo { get; set; }
         private BorderModel? _SelectBorder;
         public BorderModel? SelectBorder
         {
@@ -33,10 +38,13 @@ namespace getway.ViewModel
                 // 停掉上一块板卡的轮询循环，再按新的槽位重新拉数据
                 // （RefreshIpcAsync 用 _isSipUserReg 做开关，这里置 false 旧循环会自行退出）
                 _isSipUserReg = false;
+                BoardNo = border.SlotNo.ToString();
 
                 RefreshIpcAsync();
             }
         }
+
+        EditorSipUserView sipUserView;
 
         private bool _isBorder = false;
 
@@ -53,12 +61,16 @@ namespace getway.ViewModel
         // telnet 连接标识，由父 ViewModel（GetWayViewMode）在连接建立后注入
         public string IP { get; private set; } = string.Empty;
 
-        public ICommand SelectBorderCommand { get; }
+        public ICommand SelectBorderCommand { get; set; }
+        public ICommand EditchSipUserCommand { get; set; }
+
 
         public IpcItemViewModel()
         {
             // 构造时只做最小化初始化，不取数据：此时父 ViewModel 还没建立连接
             SelectBorderCommand = new Command(SelectBorderExecute);
+            EditchSipUserCommand = new ViewModelCommand(QueryHotLine);
+
             _cts = new CancellationTokenSource();
             //生成临时数据
             TempBorderInfo();
@@ -150,9 +162,10 @@ namespace getway.ViewModel
             string ip = IP;
             int slotNo = _SelectBorder.SlotNo;
 
-            if (_isSipUserReg) return;
-            _isSipUserReg = true;
+            if (_isSipUserReg|| _isSipUserCall) return;
 
+            //起线程，后台循环查询sip用户注册状态
+            _isSipUserReg = true;
             Task.Run(async () =>
             {
                 while (!_cts.Token.IsCancellationRequested && _isSipUserReg)
@@ -180,6 +193,53 @@ namespace getway.ViewModel
                             if (string.IsNullOrEmpty(result)) break;
 
                             TelnetEvent.SipUserString(result, IpcUserList);
+                            await Task.Delay(300, _cts.Token);
+
+                        } while (++loopCount < 20);   // 兜底上限，设备持续吐数据时不会死循环
+
+
+                        await Task.Delay(2000, _cts.Token);
+
+                    }
+                    catch (OperationCanceledException) { break; }
+                    catch (Exception ex)
+                    {
+                        //Dispatcher.Invoke(() => AppendLog($"轮询出错: {ex.Message}"));
+                        await Task.Delay(5000, _cts.Token);
+                    }
+                }
+            });
+
+            //起线程，后台循环查询sip用户呼叫状态
+            _isSipUserCall = true;
+            Task.Run(async () =>
+            {
+                //获取配置信息
+                string name = DefaulConfig.QuerySIPUserCallStateUsername_1;
+                string password = DefaulConfig.QuerySIPUserCallStatePassword_1;
+                string key = ip + name;
+                //添加telnet连接
+                TcpConnect.AddTelnet(ip + name, ip, name, password);
+
+                while (!_cts.Token.IsCancellationRequested && _isSipUserCall)
+                {
+
+                    try
+                    {
+                        //查询sip用户注册数据
+                        TelnetEvent.QuerySipUserCall(key, 0, slotNo);
+                        await Task.Delay(300, _cts.Token);
+
+                        //处理查询数据
+                        string result;
+                        int loopCount = 0;
+                        do
+                        {
+                            result = TcpConnect.Receive(key);
+                            // 没有更多数据就直接结束，不要空转解析
+                            if (string.IsNullOrEmpty(result)) break;
+
+                            TelnetEvent.SipUserCallString(result, IpcUserList);
                             await Task.Delay(300, _cts.Token);
 
                         } while (++loopCount < 20);   // 兜底上限，设备持续吐数据时不会死循环
@@ -232,5 +292,45 @@ namespace getway.ViewModel
             }
             string a = "";
         }
+
+        public IpcUserModel getIpcUser(string phoneNum)
+        {
+            if (string.IsNullOrEmpty(phoneNum)) return null;
+
+            foreach (IpcUserModel item in IpcUserList)
+            {
+                if (phoneNum.Equals(item.Name))
+                {
+                    return item;
+                }
+            }
+            return null;
+        }
+
+        //---------------------编辑热线--------------------------
+
+
+        public void QueryHotLine(object paramter)
+        {
+            string result = string.Empty;
+            string key = DefaulConfig.GetBaseKey() ;
+            string phoneNum = (string)paramter;
+            string hotlineNum = string.Empty;
+            string hotlinetime = string.Empty;
+
+            
+            TelnetEvent.QueryHotLine(DefaulConfig.FrameId.ToString(), BoardNo, phoneNum);
+            result = TcpConnect.Receive(key);
+            IpcUserModel model = getIpcUser(phoneNum);
+            TelnetEvent.HotlineString(result, model);
+
+
+
+            sipUserView = new EditorSipUserView(BoardNo, phoneNum, hotlineNum, hotlinetime);
+            sipUserView.ShowDialog();
+
+        }
+
+        
     }
 }

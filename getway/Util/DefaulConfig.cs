@@ -5,7 +5,18 @@ namespace getway.Util
     public class DefaulConfig
     {
 
+        //暂存数据
         public static string LoginPassword = "";
+        public static string GetwayIp = "";
+
+        public static string GetBaseKey()
+        {
+            return BaseUsername + GetwayIp;
+        }
+
+        public static bool IsDebug = true;
+        public static int FrameId = 0;
+
 
         // PGSQL 数据源
         public static string POSTGRESQL_PORT = "5432";
@@ -14,7 +25,6 @@ namespace getway.Util
         public static string POSTGRESQL_DATABASE = "freeswitch";
         public static string DB_STRING = "";
 
-        public static int FrameId = 12;
         public static void SetDBString(string ip)
         {
             DB_STRING = $"Host={ip}; Port={POSTGRESQL_PORT}; User Id={POSTGRESQL_USERNAME}; Password={POSTGRESQL_PASSWORD}; Database={POSTGRESQL_DATABASE}";

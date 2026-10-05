@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.Input;
+using DMGatewayDemo.Util;
 using getway.Base;
 using getway.DB.Pg;
 using getway.DB.TelnetConnect;
@@ -24,8 +25,8 @@ namespace getway.ViewModel
         public AsyncRelayCommand AddConnectCommand { get; set; }
         public ICommand QueryBoardCommand { get; set; }
         public ICommand QuerySIPUserCommand { get; set; }
-
         public ICommand QueryCommand { get; set; }
+        public ICommand BatchUpdateSipUserCommad {  get; set; }
 
         // 日志缓冲：界面绑定的是 ReadContent 字符串，追加内容后必须主动通知刷新
         private readonly StringBuilder _readContent = new StringBuilder();
@@ -53,6 +54,7 @@ namespace getway.ViewModel
             {
                 if (SetProperty(ref _GetWayIp, value) && !string.IsNullOrEmpty(value))
                 {
+                    DefaulConfig.GetwayIp = value;
                     _ = SwitchGetWayAsync(value);
                 }
             }
@@ -73,6 +75,7 @@ namespace getway.ViewModel
             QueryBoardCommand = new AsyncRelayCommand(QueryBoard);
             QuerySIPUserCommand = new AsyncRelayCommand(QuerySipUser);
             QueryCommand = new AsyncRelayCommand(QueryAnyCommand);
+            BatchUpdateSipUserCommad = new ViewModelCommand(BatchUpdateSipUser);
 
             AddGetwayCommand = new Command(AddGetway);
             DeleteGetwayCommand = new Command(DeleteGetway);
@@ -263,6 +266,23 @@ namespace getway.ViewModel
             }
 
         }
+
+
+        
+        public void BatchUpdateSipUser(object param)
+        {
+            string BoardNo = IpcItemVM.BoardNo;
+
+            BatchUpdateSIPUserView batchUpdateView = new BatchUpdateSIPUserView(BoardNo);
+            batchUpdateView.ShowDialog();
+        }
+
+
+
+        //---------------------配置拨号计划--------------------------
+
+
+        //---------------------保存配置--------------------------
 
 
     }

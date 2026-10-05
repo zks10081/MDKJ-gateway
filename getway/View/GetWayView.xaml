@@ -353,6 +353,11 @@
                         Content="删除网关"
                         Style="{StaticResource ButtonStyle}"
                         Tag="&#xe626;" />
+                    <Button
+                        Command="{Binding BatchUpdateSipUserCommad}"
+                        Content="批量修改用户"
+                        Style="{StaticResource ButtonStyle}"
+                        Tag="&#xe626;" />
                 </StackPanel>
 
                 <Border Grid.Row="4" Style="{StaticResource PanelHeader}">
