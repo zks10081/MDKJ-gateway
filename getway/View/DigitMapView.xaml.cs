@@ -1,5 +1,9 @@
 ﻿using getway.ViewModel;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -7,20 +11,19 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace getway
+namespace getway.View
 {
     /// <summary>
-    /// Interaction logic for MainWindow.xaml
+    /// DigitMapView.xaml 的交互逻辑
     /// </summary>
-    public partial class MainWindow : Window
+    public partial class DigitMapView : Window
     {
-        public MainWindow()
+        public DigitMapView()
         {
             InitializeComponent();
-            this.DataContext = new MainVlewModel();
+            this.DataContext = new DigitMapViewModel();
         }
 
         /// <summary>
@@ -28,8 +31,9 @@ namespace getway
         /// </summary>
         private void CloseButton_Click(object sender, RoutedEventArgs e)
         {
-            Application.Current.Shutdown();
+            this.Close();
         }
+
         /// <summary>
         /// 输入框获得焦点时全选，方便直接改写
         /// </summary>
@@ -38,19 +42,6 @@ namespace getway
             if (sender is TextBox textBox)
             {
                 textBox.SelectAll();
-            }
-        }
-        public void ClickMaxWindowButton(object sender, RoutedEventArgs e)
-        {
-            if (this.WindowState == WindowState.Maximized)
-            {
-                this.WindowState = WindowState.Normal;
-                //MainTitleTextBlock.FontSize = 48;
-            }
-            else
-            {
-                this.WindowState = WindowState.Maximized;
-                //MainTitleTextBlock.FontSize = 64;
             }
         }
     }

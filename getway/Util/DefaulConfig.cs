@@ -48,8 +48,9 @@ namespace getway.Util
         public const string QuerySIPUserHotLinePassword = "dm13456";
 
         //telnet参数配置
-        public static string Success_Flag = "dmkj>";
+        public static string Success_Flag = "dmkj>";//登录成功索引
         public static int Telnet_waitTime = 300;
+        public static string DigitMapName = "zjdm";//拨号规则名称
 
         // SIP用户各种状态的颜色（与 IpcItemView.xaml 中 ItemStatus 的状态色保持一致）
         public const string SIPUserBackgroundColorOfRinging = "#FFC107"; // 振铃：琥珀黄（亮底，配深字）

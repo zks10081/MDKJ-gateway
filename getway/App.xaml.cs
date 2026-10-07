@@ -1,4 +1,5 @@
 ﻿using getway.Util;
+using getway.View;
 using getway.ViewModel;
 using System.Configuration;
 using System.Data;
@@ -35,8 +36,8 @@ namespace getway
             if (loginView.ShowDialog() == true)
             {
                 // 登录成功，显示主窗口
-                MainWindow mainWindow = new MainWindow();
-                mainWindow.Show();
+                GetWayView getWay = new GetWayView();
+                getWay.Show();
             }
             else
             {

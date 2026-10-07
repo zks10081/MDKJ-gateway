@@ -23,6 +23,9 @@
     <Compile Update="View\DeviceView.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Update="View\DigitMapView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Update="View\EditorSipUserView.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -33,6 +36,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Update="View\IpcItemView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="View\SaveConfigView.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Update="View\TrendView.xaml.cs">

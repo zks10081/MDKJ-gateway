@@ -92,6 +92,23 @@ namespace getway.Util
             return false;
         }
 
+        public static bool IsDigitMap(string str)
+        {
+            if (str == null || str == "")
+            {
+                return false;
+            }
+
+            Regex rx = new Regex(@"^(([1-9]|[1-5]\d)|60)");
+
+            if (rx.IsMatch(str))
+            {
+                return true;
+            }
+            return false;
+
+        }
+
 
     }
 }

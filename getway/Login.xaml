@@ -242,6 +242,10 @@
 
         <!--  登录表单  -->
         <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="6*"/>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
@@ -251,8 +255,8 @@
 
             <StackPanel
                 Grid.Row="0"
-                Margin="0,26,0,20"
-                HorizontalAlignment="Center"
+                Margin="114,26,0,20"
+                HorizontalAlignment="Left"
                 Orientation="Horizontal">
                 <Border
                     Width="34"
@@ -288,7 +292,7 @@
             <StackPanel
                 Grid.Row="1"
                 Width="300"
-                HorizontalAlignment="Center">
+                HorizontalAlignment="Left" Grid.ColumnSpan="2" Margin="60,0,0,26" Grid.RowSpan="2">
                 <StackPanel>
                     <TextBlock Style="{StaticResource FieldLabelStyle}" Text="用户名" />
                     <Border Style="{StaticResource InputBoxStyle}">
@@ -341,11 +345,11 @@
 
             <TextBlock
                 Grid.Row="2"
-                Margin="0,12,0,0"
-                HorizontalAlignment="Center"
+                Margin="166,12,0,26"
+                HorizontalAlignment="Left"
                 FontSize="11"
                 Foreground="{StaticResource SecondaryText}"
-                Text="按 Enter 快速登录" />
+                Text="按 Enter 快速登录" Grid.RowSpan="2" />
         </Grid>
     </Grid>
 </Window>

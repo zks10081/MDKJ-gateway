@@ -8,7 +8,7 @@ namespace getway.View
     /// <summary>
     /// GetWayView.xaml 的交互逻辑
     /// </summary>
-    public partial class GetWayView : UserControl
+    public partial class GetWayView : Window
     {
         private DispatcherTimer _timer;
         public GetWayView()
@@ -33,7 +33,25 @@ namespace getway.View
         /// </summary>
         private void MinimizeButton_Click(object sender, RoutedEventArgs e)
         {
-            //SystemCommands.MinimizeWindow(this);
+            SystemCommands.MinimizeWindow(this);
+        }
+        /// <summary>
+        /// 最大化
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        public void ClickMaxWindowButton(object sender, RoutedEventArgs e)
+        {
+            if (this.WindowState == WindowState.Maximized)
+            {
+                this.WindowState = WindowState.Normal;
+                MainTitleTextBlock.FontSize = 48;
+            }
+            else
+            {
+                this.WindowState = WindowState.Maximized;
+                MainTitleTextBlock.FontSize = 64;
+            }
         }
 
         /// <summary>

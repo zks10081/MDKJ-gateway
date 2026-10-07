@@ -200,7 +200,7 @@
                     FontSize="24"
                     Style="{StaticResource FieldLabelStyle}"
                     Text="起始号码" />
-                    <Border Style="{StaticResource InputBoxStyle}" Width="300">
+                    <Border Style="{StaticResource InputBoxStyle}">
                         <TextBox
                         x:Name="txtStartPhone"
                         GotKeyboardFocus="Input_GotKeyboardFocus"

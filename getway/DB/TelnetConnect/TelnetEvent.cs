@@ -1,5 +1,6 @@
 ﻿using getway.Base;
 using getway.Model;
+using getway.Util;
 using System.Collections.ObjectModel;
 using System.Text.RegularExpressions;
 using System.Windows.Controls;
@@ -153,6 +154,28 @@ namespace getway.DB.TelnetConnect
             telnet.Receive();
 
         }
+        //---------------------------拨号规则操控--------------------------
+
+        /// <summary>
+        /// 修改拨号规则，先删除，添加
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="digitmap"></param>
+        public static void DigitMap(string key, string digitmap)
+        {
+            Telnet2 telnet = TcpConnect.GetTelnet(key);
+            string result = string.Empty;
+
+            telnet.Send("enable" + Environment.NewLine);
+            result = telnet.Receive();
+            telnet.Send("config" + Environment.NewLine);//进入config模式
+            result = telnet.Receive();
+
+            telnet.Send($"local-digitmap delete all" + Environment.NewLine);
+            result = telnet.Receive();
+            telnet.Send($"local-digitmap add {DefaulConfig.DigitMapName} normal {digitmap}" + Environment.NewLine);
+
+        }
 
         /// <summary>
         /// 查询拨号计划
@@ -178,7 +201,7 @@ namespace getway.DB.TelnetConnect
         /// <param name="key"></param>
         /// <param name="digitName"></param>
         /// <param name="ruletext"></param>
-        public static void DigitMapAdd(string key,string digitName,string ruletext)
+        public static void DigitMapAdd(string key,string ruletext)
         {
             Telnet2 telnet = TcpConnect.GetTelnet(key);
             string result = string.Empty;
@@ -188,7 +211,7 @@ namespace getway.DB.TelnetConnect
             telnet.Send("config" + Environment.NewLine);//进入config模式
             result = telnet.Receive();
 
-            telnet.Send($"local-digitmap add {digitName} normal {ruletext}" + Environment.NewLine);
+            telnet.Send($"local-digitmap add {DefaulConfig.DigitMapName} normal {ruletext}" + Environment.NewLine);
 
         }
 
@@ -257,6 +280,26 @@ namespace getway.DB.TelnetConnect
         /// </summary>
         public static void SipUserAdd()
         {
+
+        }
+
+
+    
+
+
+        //---------------------------保存配置--------------------------
+
+        public static void SaveConfig(string key)
+        {
+            Telnet2 telnet = TcpConnect.GetTelnet(key);
+            string result = string.Empty;
+
+            telnet.Send("enable" + Environment.NewLine);
+            result = telnet.Receive();
+            telnet.Send("config" + Environment.NewLine);//进入config模式
+            result = telnet.Receive();
+
+            telnet.Send($"save" + Environment.NewLine);
 
         }
 
