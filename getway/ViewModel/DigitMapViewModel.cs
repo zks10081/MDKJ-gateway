@@ -1,20 +1,13 @@
 ﻿using DMGatewayDemo.Util;
-using getway.DB.Pg;
 using getway.DB.TelnetConnect;
 using getway.Util;
 using getway.View;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
-using System.Windows.Shapes;
 
 namespace getway.ViewModel
 {
-    class DigitMapViewModel :ViewModelBase
+    class DigitMapViewModel : ViewModelBase
     {
         private string _DigtiMapContent;
         public string DigtiMapContent { get => _DigtiMapContent; set => SetProperty(ref _DigtiMapContent, value); }
@@ -36,7 +29,15 @@ namespace getway.ViewModel
         }
 
 
-        public ICommand UpdateInfo => new ViewModelCommand(async param => {
+        public ICommand UpdateInfo => new ViewModelCommand(async param =>
+        {
+            if (string.IsNullOrEmpty(DigtiMapContent))
+            {
+                MessageView.ShowFail("拨号计划内容不能为空，请重新输入！");
+                DigtiMapContent = old_DigtiMapContent;
+                return;
+
+            }
 
             DigtiMapContent = DigtiMapContent.Replace(" ", ""); // 去除空格
             DigtiMapContent = DigtiMapContent.ToUpper(); // 变大写
@@ -54,7 +55,8 @@ namespace getway.ViewModel
 
             TelnetEvent.DigitMapAdd(key, DigtiMapContent);
 
-            await Task.Run(() => {
+            await Task.Run(() =>
+            {
 
                 while (true)
                 {
@@ -104,7 +106,7 @@ namespace getway.ViewModel
 
 
 
-                CloseWindows(param);
+            CloseWindows(param);
 
         });
 

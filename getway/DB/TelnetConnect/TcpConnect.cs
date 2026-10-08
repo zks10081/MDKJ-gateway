@@ -61,13 +61,21 @@ namespace getway.DB.TelnetConnect
         /// <returns></returns>
         public static string Receive(String key)
         {
-            if (TelnetPool.ContainsKey(key))
+            // 连接不存在或已断开时直接给空串，交给调用方按"没有数据"处理
+            if (TelnetPool.TryGetValue(key, out Telnet2? telnet) && telnet != null && telnet.Connected)
             {
-                return TelnetPool[key].Receive();
+                return telnet.Receive();
             }
             return String.Empty;
         }
-
+        public static string Receive2(String key)
+        {
+            if (TelnetPool.ContainsKey(key))
+            {
+                return TelnetPool[key].Receive2();
+            }
+            return String.Empty;
+        }
         public static void CloseTelnetByIp(string ip)
         {
             foreach (string key in TelnetPool.Keys)

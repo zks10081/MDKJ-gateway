@@ -98,14 +98,16 @@ namespace getway.DB.TelnetConnect
             if (Connected && result.EndsWith(LoginPrompt))
             {
                 Send(username, waitTime);
-                result = Receive();
+                // 登录响应要给足时间，用比默认更长的读取窗口
+                result = Receive(5000);
                 if (result.EndsWith(PasswordPrompt))
                 {
                     Send(password, waitTime);
-                    result = Receive();
+                    result = Receive(5000);
                     if (result.EndsWith(DefaulConfig.Success_Flag))
                     {
                         isLogin = true;
+                        Send("scroll 120", waitTime);
                     }
                     else
                     {
@@ -148,41 +150,65 @@ namespace getway.DB.TelnetConnect
         /// 接收
         /// </summary>
         /// <returns>传回的数据</returns>
+        /// <summary>
+        /// 接收设备回显。
+        /// 约定：设备在 waitMs 内没有返回任何数据时返回 string.Empty（表示"这一轮没数据"），
+        /// 而不是一直阻塞到抛超时异常——调用方要靠空串判断"查不到东西就退出"。
+        /// </summary>
+        /// <param name="waitMs">本次读取的等待上限（毫秒），第一次读超时即视为无数据</param>
         public string Receive(int waitMs = 1500)
         {
             StringBuilder result = new StringBuilder();
             if (Connected && ns != null && ns.CanRead)
             {
-                // 先给设备一点时间把数据吐出来，超时后不再干等
-                int waited = 0;
-                while (!ns.DataAvailable && waited < waitMs)
+                byte[] buff = new byte[BuffSize];
+                try
                 {
-                    Thread.Sleep(50);
-                    waited += 50;
-                }
-
-                if (ns.DataAvailable)
-                {
-                    byte[] buff = new byte[BuffSize];
-                    int numberOfRead;
+                    // 关键：给本次读取设一个超时，读不到就不再等
+                    ns.ReadTimeout = waitMs;
                     do
                     {
-                        try
-                        {
-                            numberOfRead = ns.Read(buff, 0, BuffSize);
-                        }
-                        catch (IOException)
-                        {
-                            // 读超时：返回已经读到的部分
-                            break;
-                        }
-
-                        // 0 表示对端已关闭连接
-                        if (numberOfRead <= 0) break;
-
-                        result.Append(Encoding.ASCII.GetString(buff, 0, numberOfRead));
+                        int numberOfRead = ns.Read(buff, 0, BuffSize);
+                        // 读到 0 字节说明对端已关闭连接
+                        if (numberOfRead == 0) break;
+                        result.AppendFormat("{0}", Encoding.ASCII.GetString(buff, 0, numberOfRead));
                     } while (ns.DataAvailable);
                 }
+                catch (IOException)
+                {
+                    // 读取超时或连接被关闭：按"本次没有数据"处理
+                }
+                catch (ObjectDisposedException)
+                {
+                    // 连接已释放：同上
+                }
+            }
+
+            string info = result.ToString().Trim();
+            // 只有确实读到内容才去处理分页/系统时间提示，避免空内容时又空等一轮
+            if (info.Length > 0)
+            {
+                ResultCheck(result);
+            }
+
+            return result.ToString().Trim();
+        }
+
+        public string Receive2(int waitMs = 1500)
+        {
+            StringBuilder result = new StringBuilder();
+            string line = string.Empty;
+            if (Connected && ns != null && ns.CanRead)
+            {
+
+                StreamReader input = new StreamReader(ns);
+                if (input == null) return null;
+                do
+                {
+                    line = input.ReadLine();
+                    if (string.IsNullOrEmpty(line)) break;
+                    result.AppendLine(line);
+                } while (true);
             }
             string info = result.ToString().Trim();
             //处理一些情况

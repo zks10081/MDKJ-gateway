@@ -1,10 +1,7 @@
-﻿using getway.Base;
-using getway.Model;
+﻿using getway.Model;
 using getway.Util;
 using System.Collections.ObjectModel;
 using System.Text.RegularExpressions;
-using System.Windows.Controls;
-using System.Windows.Input;
 
 namespace getway.DB.TelnetConnect
 {
@@ -54,7 +51,11 @@ namespace getway.DB.TelnetConnect
 
             telnet.Send("enable" + Environment.NewLine);
             string result = telnet.Receive();
-            telnet.Send($"display sippstnuser call {slotid}/{borderid}/0 {slotid}/{borderid}/63" + Environment.NewLine);
+            //display sippstnuser call-state 0/1/0 0/1/63
+            telnet.Send($"display sippstnuser call-state {slotid}/{borderid}/0 {slotid}/{borderid}/63" + Environment.NewLine);
+            Thread.Sleep(100);
+            telnet.Send($" " + Environment.NewLine);
+            telnet.Send($" " + Environment.NewLine);
             //telnet.Send("quit" + Environment.NewLine);
         }
 
@@ -84,8 +85,28 @@ namespace getway.DB.TelnetConnect
             Telnet2 telnet = TcpConnect.GetTelnet(key);
             if (telnet == null) return;
 
+            string command = "quit";
+            int out_flag = 0;
+            do
+            {
+                telnet.Send(command + Environment.NewLine);
+                Thread.Sleep(200);
+                string result = telnet.Receive();
 
-            telnet.Send("quit" + Environment.NewLine);
+                if (result.EndsWith("dmkj#"))
+                {
+                    break;
+                }
+                if (result.Contains("(y/n)[n]"))//如果要退出连接，则终止
+                {
+                    telnet.Send("n" + Environment.NewLine);
+                }
+                if (out_flag > 4)//超过4次，就停止循环
+                {
+                    break;
+                }
+            }
+            while (true);
 
         }
 
@@ -101,6 +122,8 @@ namespace getway.DB.TelnetConnect
             string result = string.Empty;
 
             telnet.Send("enable" + Environment.NewLine);
+            result = telnet.Receive();
+            telnet.Send("config" + Environment.NewLine);//进入config模式
             result = telnet.Receive();
             telnet.Send("esl user" + Environment.NewLine);//进入esl user模式
             result = telnet.Receive();
@@ -123,6 +146,8 @@ namespace getway.DB.TelnetConnect
 
             telnet.Send("enable" + Environment.NewLine);
             result = telnet.Receive();
+            telnet.Send("config" + Environment.NewLine);//进入config模式
+            result = telnet.Receive();
             telnet.Send("esl user" + Environment.NewLine);//进入esl user模式
             result = telnet.Receive();
 
@@ -143,6 +168,8 @@ namespace getway.DB.TelnetConnect
             Telnet2 telnet = TcpConnect.GetTelnet(key);
             string result = string.Empty;
             telnet.Send("enable" + Environment.NewLine);
+            result = telnet.Receive();
+            telnet.Send("config" + Environment.NewLine);//进入config模式
             result = telnet.Receive();
             telnet.Send("esl user" + Environment.NewLine);//进入esl user模式
             result = telnet.Receive();
@@ -181,7 +208,7 @@ namespace getway.DB.TelnetConnect
         /// 查询拨号计划
         /// </summary>
         /// <param name="key"></param>
-        public static void DigitMapQuery(string key)
+        public static void DigitMapQueryAll(string key)
         {
             Telnet2 telnet = TcpConnect.GetTelnet(key);
             string result = string.Empty;
@@ -201,7 +228,7 @@ namespace getway.DB.TelnetConnect
         /// <param name="key"></param>
         /// <param name="digitName"></param>
         /// <param name="ruletext"></param>
-        public static void DigitMapAdd(string key,string ruletext)
+        public static void DigitMapAdd(string key, string ruletext)
         {
             Telnet2 telnet = TcpConnect.GetTelnet(key);
             string result = string.Empty;
@@ -259,7 +286,7 @@ namespace getway.DB.TelnetConnect
         /// 删除全部SIP用户
         /// </summary>
         /// <param name="key"></param>
-        public static async Task SipUserDeleteAll(string key,string frameid,string slotid)
+        public static async Task SipUserDeleteAll(string key, string frameid, string slotid)
         {
             Telnet2 telnet = TcpConnect.GetTelnet(key);
             string result = string.Empty;
@@ -284,7 +311,7 @@ namespace getway.DB.TelnetConnect
         }
 
 
-    
+
 
 
         //---------------------------保存配置--------------------------
@@ -357,7 +384,7 @@ namespace getway.DB.TelnetConnect
         /// SIP 用户信息：更新已存在对象的属性，靠 IpcUserModel 的 PropertyChanged 推送到界面。
         /// 不能用 new 出来的对象替换 List[index]——集合不发通知，界面就"收不到"数据。
         /// </summary>
-        public static void SipUserString(string result, ObservableCollection<IpcUserModel> List)
+        public static void SipUserRegString(string result, ObservableCollection<IpcUserModel> List)
         {
             if (string.IsNullOrWhiteSpace(result)) return;
 
@@ -472,18 +499,26 @@ namespace getway.DB.TelnetConnect
         }
 
         /// <summary>
-        /// 热线信息解析
+        /// 解析 键值类型的内容
+        /// 热线信息解析、拨号计划解析
         /// </summary>
-        public static void HotlineString(string result, IpcUserModel model)
+        public static Dictionary<string, string> MapContentString(string result)
         {
-            if (string.IsNullOrWhiteSpace(result)) return;
+            if (string.IsNullOrWhiteSpace(result)) return new Dictionary<string, string>();
 
-            var lines = result.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
+            Dictionary<string, string> dic = new Dictionary<string, string>();
 
-            foreach (var line in lines)
+            var allMatches = Regex.Matches(result, @"^[\s-]*(\w[\w()-]*)\s*:\s*(\S+)", RegexOptions.Multiline);
+
+            foreach (Match line in allMatches)
             {
+                string key = line.Groups[1].Value;   // 如 hottime(s)、hotlinenum
+                string value = line.Groups[2].Value; // 如 5、-
 
+                dic[key] = value;
             }
+
+            return dic;
         }
 
     }

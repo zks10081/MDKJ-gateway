@@ -34,9 +34,9 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border
-                    Name="bg"
-                    Background="{TemplateBinding Background}"
-                    BorderThickness="{TemplateBinding BorderThickness}">
+                            Name="bg"
+                            Background="{TemplateBinding Background}"
+                            BorderThickness="{TemplateBinding BorderThickness}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
@@ -55,7 +55,7 @@
         <Style
             x:Key="CloseButtonStyle"
             BasedOn="{StaticResource CaptionButtonStyle}"
-            TargetType="Button">    
+            TargetType="Button">
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -202,13 +202,13 @@
             <RowDefinition Height="10" />
             <RowDefinition />
         </Grid.RowDefinitions>
-        
+
         <Grid Grid.Row="0">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="25*"/>
-                <ColumnDefinition Width="50*"/>
-                <ColumnDefinition Width="15*"/>
-                <ColumnDefinition Width="10*"/>
+                <ColumnDefinition Width="25*" />
+                <ColumnDefinition Width="50*" />
+                <ColumnDefinition Width="15*" />
+                <ColumnDefinition Width="10*" />
             </Grid.ColumnDefinitions>
 
             <Grid Grid.Column="0">
@@ -226,7 +226,7 @@
                         FontFamily="FZYaoTi"
                         FontSize="18"
                         Foreground="White"
-                        Text="浙江达名科技-网关系统" />   
+                        Text="浙江达名科技-网关系统" />
                     <TextBlock
                         FontFamily="FZYaoTi"
                         FontSize="9"
@@ -235,7 +235,7 @@
                 </StackPanel>
 
             </Grid>
-            
+
             <TextBlock
                 x:Name="MainTitleTextBlock"
                 Grid.Column="1"
@@ -276,15 +276,16 @@
         <Grid Grid.Row="2">
 
             <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="210" />
+                <ColumnDefinition Width="300" />
                 <ColumnDefinition Width="1*" />
-                <ColumnDefinition Width="1*" />
-                <ColumnDefinition Width="1*" />
+                <ColumnDefinition Width="510" />
 
             </Grid.ColumnDefinitions>
 
             <StackPanel
-                Grid.Column="0"
-                HorizontalAlignment="Center"
+                Grid.Column="1"
+                HorizontalAlignment="Left"
                 VerticalAlignment="Center"
                 Orientation="Horizontal">
                 <TextBlock
@@ -295,22 +296,23 @@
                     Text="2000-1-1 0:00:00" />
             </StackPanel>
             <StackPanel
-                Grid.Column="1"
+                Grid.Column="2"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
                 Orientation="Horizontal">
-                <Border
-                    Width="10"
-                    Height="10"
-                    Background="Green"
-                    CornerRadius="1000" />
+                <TextBlock
+                    Grid.Column="0"
+                    FontFamily="{StaticResource iconfont}"
+                    FontSize="28"
+                    Foreground="{Binding QueryStatusColor}"
+                    Text="{Binding QueryStatusIcon}" />
                 <TextBlock
                     FontSize="24"
                     Style="{StaticResource PanelHeaderText}"
-                    Text="IP 电话用户" />
+                    Text="{Binding QueryStatusText}" />
             </StackPanel>
             <Border
-                Grid.Column="2"
+                Grid.Column="3"
                 Margin="0,0"
                 Padding="10,5"
                 HorizontalAlignment="Right"
@@ -467,9 +469,13 @@
                         Tag="&#xe626;" />
                     <TextBox Style="{StaticResource CommandInputStyle}" Text="{Binding AnyCommandString}" />
                     <Button
-                        Margin="0"
                         Command="{Binding QueryCommand}"
                         Content="执行命令"
+                        Style="{StaticResource ButtonStyle}"
+                        Tag="&#xe626;" />
+                    <Button
+                        Command="{Binding ResetPermCommand}"
+                        Content="重置权限"
                         Style="{StaticResource ButtonStyle}"
                         Tag="&#xe626;" />
                     <Button
@@ -485,6 +491,16 @@
                     <Button
                         Command="{Binding BatchUpdateSipUserCommad}"
                         Content="批量修改用户"
+                        Style="{StaticResource ButtonStyle}"
+                        Tag="&#xe626;" />
+                    <Button
+                        Command="{Binding DigitMapCommand}"
+                        Content="拨号计划"
+                        Style="{StaticResource ButtonStyle}"
+                        Tag="&#xe626;" />
+                    <Button
+                        Command="{Binding SaveConfigCommand}"
+                        Content="保存配置"
                         Style="{StaticResource ButtonStyle}"
                         Tag="&#xe626;" />
                 </StackPanel>

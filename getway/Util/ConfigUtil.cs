@@ -99,13 +99,36 @@ namespace getway.Util
                 return false;
             }
 
-            Regex rx = new Regex(@"^(([1-9]|[1-5]\d)|60)");
+            Regex rx = new Regex(@"^[0-9.\|\[\]\-,，{}A-Za-z]+$");
 
             if (rx.IsMatch(str))
             {
                 return true;
             }
             return false;
+
+        }
+
+        /// <summary>
+        /// 判断telnet查询终止
+        /// </summary>
+        /// <param name="str"></param>
+        /// <returns></returns>
+        public static bool IsCommandEndFlag(string str)
+        {
+            if (str == null || str == "")
+            {
+                return false;
+            }
+
+            Regex rx = new Regex(@"(dmkj[\S]*#)$");
+
+            if (rx.IsMatch(str))
+            {
+                return true;
+            }
+            return false;
+
 
         }
 

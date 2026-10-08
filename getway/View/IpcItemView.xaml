@@ -222,7 +222,9 @@
                                     Margin="10,5"
                                     Command="{Binding DataContext.SelectBorderCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                     CommandParameter="{Binding}"
-                                    Style="{StaticResource borderStyle}" />
+                                    Style="{StaticResource borderStyle}" 
+                                    IsEnabled="{Binding IsEnable}"
+                                    />
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                     </ListBox>

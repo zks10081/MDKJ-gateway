@@ -16,6 +16,10 @@ namespace getway.Util
 
         public static bool IsDebug = true;
         public static int FrameId = 0;
+        public static int MaxEmptyCount = 3;//读取空值次数阈值
+
+        //debug打印
+        public static bool Debug_ShowTelnet = false;
 
 
         // PGSQL 数据源
@@ -85,6 +89,15 @@ namespace getway.Util
             {"4",SIPUserBackgroundColorOfLocked},
             {"5",SIPUserBackgroundColorOfIdle},
             {"0",SIPUserBackgroundColorOfUnOnline}
+        };
+
+        public static Dictionary<string, string> Dic_QueryStatus = new Dictionary<string, string>()
+        {
+            {"0","网关未连接" },
+            {"1","板卡未激活" },
+            {"2","加载中" },
+            {"3","加载成功" },
+            {"4","连接超时" },
         };
 
 
