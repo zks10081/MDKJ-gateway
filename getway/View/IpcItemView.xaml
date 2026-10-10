@@ -120,8 +120,7 @@
             <ItemsControl
                 Margin="6"
                 d:ItemsSource="{d:SampleData ItemCount=64}"
-                ItemsSource="{Binding IpcUserList}"
-                >
+                ItemsSource="{Binding IpcUserList}">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
                         <WrapPanel ItemHeight="112" ItemWidth="112" />
@@ -130,7 +129,11 @@
 
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <Button Background="Transparent" BorderBrush="Transparent" Command="{Binding EditchSipUserCommand}">
+                        <Button
+                            Background="Transparent"
+                            BorderBrush="Transparent"
+                            Command="{Binding DataContext.EditchSipUserCommand, RelativeSource={RelativeSource AncestorType=ScrollViewer}}"
+                            CommandParameter="{Binding Name}">
                             <Grid
                                 Width="104"
                                 Height="104"
@@ -222,9 +225,8 @@
                                     Margin="10,5"
                                     Command="{Binding DataContext.SelectBorderCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                     CommandParameter="{Binding}"
-                                    Style="{StaticResource borderStyle}" 
                                     IsEnabled="{Binding IsEnable}"
-                                    />
+                                    Style="{StaticResource borderStyle}" />
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                     </ListBox>

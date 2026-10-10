@@ -1,17 +1,9 @@
-﻿using getway.ViewModel;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using getway.Model;
+using getway.ViewModel;
+using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 
 namespace getway.View
 {
@@ -20,10 +12,10 @@ namespace getway.View
     /// </summary>
     public partial class EditorSipUserView : Window
     {
-        public EditorSipUserView(string boardport, string userphone, string hotlinephone, string hotlinetime)
+        public EditorSipUserView(string boardport, string userphone, string hotlinephone, string hotlinetime, ObservableCollection<IpcUserModel> IpcUserList)
         {
             InitializeComponent();
-            this.DataContext =new EditSipUserViewModel(boardport,userphone,hotlinephone,hotlinetime);
+            this.DataContext = new EditSipUserViewModel(boardport, userphone, hotlinephone, hotlinetime, IpcUserList);
         }
 
 

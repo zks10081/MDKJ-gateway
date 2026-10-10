@@ -68,6 +68,15 @@ namespace getway.DB.TelnetConnect
             }
             return String.Empty;
         }
+        public static string Receive(String key, string terminator, int timeoutMs)
+        {
+            // 连接不存在或已断开时直接给空串，交给调用方按"没有数据"处理
+            if (TelnetPool.TryGetValue(key, out Telnet2? telnet) && telnet != null && telnet.Connected)
+            {
+                return telnet.Receive(terminator, timeoutMs);
+            }
+            return String.Empty;
+        }
         public static string Receive2(String key)
         {
             if (TelnetPool.ContainsKey(key))
@@ -76,6 +85,15 @@ namespace getway.DB.TelnetConnect
             }
             return String.Empty;
         }
+
+        public static void ClearReceiveBuffer(String key)
+        {
+            if (TelnetPool.ContainsKey(key))
+            {
+                TelnetPool[key].ClearReceiveBuffer();
+            }
+        }
+
         public static void CloseTelnetByIp(string ip)
         {
             foreach (string key in TelnetPool.Keys)

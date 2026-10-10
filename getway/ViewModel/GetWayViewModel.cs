@@ -361,7 +361,7 @@ namespace getway.ViewModel
         {
             string BoardNo = IpcItemVM.BoardNo;
 
-            BatchUpdateSIPUserView batchUpdateView = new BatchUpdateSIPUserView(BoardNo);
+            BatchUpdateSIPUserView batchUpdateView = new BatchUpdateSIPUserView(this, BoardNo);
             batchUpdateView.ShowDialog();
         }
 
@@ -369,6 +369,15 @@ namespace getway.ViewModel
 
         //---------------------配置拨号计划--------------------------
         public void DigitMap(object param)
+        {
+            string ip = GetWayIp;
+            string digitMapContent = DigitMapDB.getDigitMapByIp(ip);
+
+            DigitMapView digitalMapView = new DigitMapView(digitMapContent, this);
+            digitalMapView.Show();
+
+        }
+        public void DigitMapTelnet(object param)
         {
 
             string result = string.Empty;
@@ -379,9 +388,9 @@ namespace getway.ViewModel
             result = TcpConnect.Receive(key);
             Dictionary<string, string> dic = TelnetEvent.MapContentString(result);
 
+            string digitMapContent = dic["Body"];
 
-
-            DigitMapView digitalMapView = new DigitMapView();
+            DigitMapView digitalMapView = new DigitMapView(digitMapContent, this);
             digitalMapView.Show();
         }
 

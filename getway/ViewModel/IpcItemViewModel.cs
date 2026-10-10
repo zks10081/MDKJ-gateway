@@ -1,5 +1,6 @@
 using DMGatewayDemo.Util;
 using getway.Base;
+using getway.DB.Pg;
 using getway.DB.TelnetConnect;
 using getway.Model;
 using getway.Util;
@@ -28,30 +29,26 @@ namespace getway.ViewModel
             set => SetSelectBorder(value, CancellationToken.None);
         }
 
-
-
-
-
         // 改选中项并触发用户列表刷新；token 用于丢弃过期结果
         private void SetSelectBorder(BorderModel? border, CancellationToken token)
         {
             if (SetProperty(ref _SelectBorder, border))
             {
                 // 停掉上一块板卡的轮询循环，再按新的槽位重新拉数据
-                // （RefreshIpcAsync 用 _isSipUserReg 做开关，这里置 false 旧循环会自行退出）
-                _isSipUserReg = false;
                 BoardNo = border.SlotNo.ToString();
+                InitQueryTag();
+
                 RefreshIpcAsync();
             }
         }
 
-        EditorSipUserView sipUserView;
         //板卡，sip用户注册、呼叫状态查询线程状态
         private bool _isBorder = false;
         private bool _isSipUserReg = false;
         private bool _isSipUserCall = false;
         private bool _isFirstQuery = true;//初次查询，要进行状态显示
 
+        private EditorSipUserView sipUserView;
         private CancellationTokenSource _cts;
         private readonly Random _random = new Random();
 
@@ -67,7 +64,6 @@ namespace getway.ViewModel
 
         // 日志出口：由父 ViewModel（GetWayViewMode）注入，未注入时静默丢弃
         private readonly ILogSink? _logSink;
-
         /// <summary>写一行日志；未注入日志出口时什么都不做</summary>
         private void Log(string text) => _logSink?.AppendLog(text);
         private void QuerStatus(int status, string tip) => _logSink?.QueryStatusFun(status, tip);
@@ -98,7 +94,7 @@ namespace getway.ViewModel
         {
             RefreshBoardAsync();
             //await IpcRefresh;
-            RefreshIpcAsync();
+            //RefreshIpcAsync();
         }
 
         /// <summary>
@@ -146,10 +142,15 @@ namespace getway.ViewModel
                 {
                     try
                     {
+                        //查询开始前，把读取内容清空
+                        string result = TcpConnect.Receive(key);
+
+                        //开始查询
                         TelnetEvent.QueryBoard(key, 0);
                         await Task.Delay(1000, _cts.Token);
 
-                        string result = TcpConnect.Receive(key);
+                        //处理查询结果
+                        result = TcpConnect.Receive(key);
                         TelnetEvent.BorderString(result, BorderList);
 
                         await Task.Delay(4000, _cts.Token);
@@ -221,163 +222,172 @@ namespace getway.ViewModel
                 _isFirstQuery = false;
             }
 
-            //起线程，后台循环查询sip用户注册状态
-            _isSipUserReg = true;
-            Task.Run(async () =>
+            if (!_isSipUserReg)
             {
-                string name = DefaulConfig.QuerySIPUserRegStateUsername;
-                string password = DefaulConfig.QuerySIPUserRegStatePassword;
-                string key = ip + name;
-
-                if (TcpConnect.AddTelnet(ip + name, ip, name, password) == null)
+                //起线程，后台循环查询sip用户注册状态
+                _isSipUserReg = true;
+                Task.Run(async () =>
                 {
-                    Log($"SIP 注册状态查询连接失败：{ip}");
-                    _isSipUserReg = false;
-                    return;
-                }
+                    string name = DefaulConfig.QuerySIPUserRegStateUsername;
+                    string password = DefaulConfig.QuerySIPUserRegStatePassword;
+                    string key = ip + name;
 
-                while (!_cts.Token.IsCancellationRequested && _isSipUserReg)
-                {
-
-                    var sw = Stopwatch.StartNew();
-                    try
+                    if (TcpConnect.AddTelnet(ip + name, ip, name, password) == null)
                     {
-                        //查询sip用户注册数据
-                        TelnetEvent.QuerySipUser(key, 0, slotNo);
-
-                        int emptyCount = 0;
-                        while (!token.IsCancellationRequested && sw.ElapsedMilliseconds < TotalTimeoutMs)
-                        {
-                            string result = TcpConnect.Receive(key);
-
-                            // 设备这次没吐数据：连续几次都没有就认为这条命令回显结束
-                            if (string.IsNullOrEmpty(result))
-                            {
-                                if (++emptyCount >= DefaulConfig.MaxEmptyCount) break;
-                                Thread.Sleep(200);
-                                continue;
-                            }
-
-                            emptyCount = 0;
-                            TelnetEvent.SipUserRegString(result, IpcUserList);
-                            Log($"注册状态回显（{sw.ElapsedMilliseconds} ms）：{result}");
-                            if (DefaulConfig.Debug_ShowTelnet)
-                            {
-                                Log($"注册状态回显（{sw.ElapsedMilliseconds} ms）：{result}");
-                            }
-
-                            // 回显里出现命令提示符（dmkj...#）说明这条命令已经执行完
-                            if (ConfigUtil.IsCommandEndFlag(result)) break;
-
-                            Thread.Sleep(200);
-
-                        }
-
-                        isFirstReg = true;
-                        Log($"SIP 注册状态查询成功：耗时{sw.ElapsedMilliseconds} ms");
-
-                        //本次查询时间3s后，开始下一次查询
-                        await Task.Run(() =>
-                        {
-                            while (true)
-                            {
-                                if (sw.ElapsedMilliseconds > 3000)
-                                {
-                                    break;
-                                }
-                                Thread.Sleep(100);
-                            }
-                        });
-
-                    }
-                    catch (Exception ex)
-                    {
-                        Log($"SIP 呼叫状态查询出错：{ex.Message}");
+                        Log($"SIP 注册状态查询连接失败：{ip}");
                         _isSipUserReg = false;
-                        break;
+                        return;
                     }
-                }
 
-
-            });
-
-            //起线程，后台循环查询sip用户呼叫状态
-            _isSipUserCall = true;
-            Task.Run(async () =>
-            {
-
-                //获取配置信息
-                string name = DefaulConfig.QuerySIPUserCallStateUsername_1;
-                string password = DefaulConfig.QuerySIPUserCallStatePassword_1;
-                string key = ip + name;
-                //添加telnet连接
-                if (TcpConnect.AddTelnet(ip + name, ip, name, password) == null)
-                {
-                    Log($"SIP 呼叫状态查询连接失败：{ip}");
-                    _isSipUserCall = false;
-                    return;
-                }
-
-                while (!_cts.Token.IsCancellationRequested && _isSipUserCall)
-                {
-
-                    try
+                    while (!_cts.Token.IsCancellationRequested && _isSipUserReg)
                     {
+                        //计时
                         var sw = Stopwatch.StartNew();
-                        //查询呼叫状态数据
-                        TelnetEvent.QuerySipUserCall(key, 0, slotNo);
-
-                        int emptyCount = 0;
-                        while (!token.IsCancellationRequested && sw.ElapsedMilliseconds < TotalTimeoutMs)
+                        try
                         {
+                            //循环查取前，清空读取内容
                             string result = TcpConnect.Receive(key);
+                            //查询sip用户注册数据
+                            TelnetEvent.QuerySipUser(key, 0, slotNo);
 
-                            // 设备这次没吐数据：连续几次都没有就认为这条命令回显结束
-                            if (string.IsNullOrEmpty(result))
+                            int emptyCount = 0;
+                            while (!token.IsCancellationRequested && sw.ElapsedMilliseconds < TotalTimeoutMs)
                             {
-                                if (++emptyCount >= DefaulConfig.MaxEmptyCount) break;
-                                Thread.Sleep(200);
-                                continue;
-                            }
+                                result = TcpConnect.Receive(key);
 
-                            emptyCount = 0;
-                            TelnetEvent.SipUserCallString(result, IpcUserList);
-                            if (DefaulConfig.Debug_ShowTelnet)
-                            {
-                                Log($"呼叫状态回显（{sw.ElapsedMilliseconds} ms）：{result}");
-                            }
-
-                            // 回显里出现命令提示符（dmkj...#）说明这条命令已经执行完
-                            if (ConfigUtil.IsCommandEndFlag(result)) break;
-
-                            Thread.Sleep(200);
-                        }
-
-                        isFirstCall = true;
-                        Log($"SIP 呼叫状态查询结束：耗时 {sw.ElapsedMilliseconds} ms");
-
-                        //本次查询时间3s后，开始下一次查询
-                        await Task.Run(() =>
-                        {
-                            while (true)
-                            {
-                                if (sw.ElapsedMilliseconds > 3000)
+                                // 设备这次没吐数据：连续几次都没有就认为这条命令回显结束
+                                if (string.IsNullOrEmpty(result))
                                 {
-                                    break;
+                                    if (++emptyCount >= DefaulConfig.MaxEmptyCount) break;
+                                    Thread.Sleep(200);
+                                    continue;
                                 }
-                                Thread.Sleep(100);
-                            }
-                        });
 
+                                emptyCount = 0;
+                                TelnetEvent.SipUserRegString(result, IpcUserList);
+                                if (DefaulConfig.Debug_ShowTelnet)
+                                {
+                                    Log($"注册状态回显（{sw.ElapsedMilliseconds} ms）：{result}");
+                                }
+
+                                // 回显里出现命令提示符（dmkj...#）说明这条命令已经执行完
+                                if (ConfigUtil.IsCommandEndFlag(result)) break;
+
+                                Thread.Sleep(200);
+
+                            }
+
+                            isFirstReg = true;
+                            Log($"SIP 注册状态查询成功：耗时{sw.ElapsedMilliseconds} ms");
+
+                            //本次查询时间3s后，开始下一次查询
+                            await Task.Run(() =>
+                            {
+                                while (true)
+                                {
+                                    if (sw.ElapsedMilliseconds > 3000)
+                                    {
+                                        break;
+                                    }
+                                    Thread.Sleep(100);
+                                }
+                            });
+
+                        }
+                        catch (Exception ex)
+                        {
+                            Log($"SIP 呼叫状态查询出错：{ex.Message}");
+                            _isSipUserReg = false;
+                            break;
+                        }
                     }
-                    catch (Exception ex)
+
+
+                });
+            }
+
+            if (!_isSipUserCall)
+            {
+                //起线程，后台循环查询sip用户呼叫状态
+                _isSipUserCall = true;
+                Task.Run(async () =>
+                {
+
+                    //获取配置信息
+                    string name = DefaulConfig.QuerySIPUserCallStateUsername_1;
+                    string password = DefaulConfig.QuerySIPUserCallStatePassword_1;
+                    string key = ip + name;
+                    //添加telnet连接
+                    if (TcpConnect.AddTelnet(ip + name, ip, name, password) == null)
                     {
-                        Log($"SIP 呼叫状态查询出错：{ex.Message}");
+                        Log($"SIP 呼叫状态查询连接失败：{ip}");
                         _isSipUserCall = false;
-                        break;
+                        return;
                     }
-                }
-            });
+
+                    while (!_cts.Token.IsCancellationRequested && _isSipUserCall)
+                    {
+                        try
+                        {
+                            //计时
+                            var sw = Stopwatch.StartNew();
+                            //循环查取前，清空读取内容
+                            string result = TcpConnect.Receive(key);
+                            //查询呼叫状态数据
+                            TelnetEvent.QuerySipUserCall(key, 0, slotNo);
+
+                            int emptyCount = 0;
+                            while (!token.IsCancellationRequested && sw.ElapsedMilliseconds < TotalTimeoutMs)
+                            {
+                                result = TcpConnect.Receive(key);
+
+                                // 设备这次没吐数据：连续几次都没有就认为这条命令回显结束
+                                if (string.IsNullOrEmpty(result))
+                                {
+                                    if (++emptyCount >= DefaulConfig.MaxEmptyCount) break;
+                                    Thread.Sleep(200);
+                                    continue;
+                                }
+
+                                emptyCount = 0;
+                                TelnetEvent.SipUserCallString(result, IpcUserList);
+                                if (DefaulConfig.Debug_ShowTelnet)
+                                {
+                                    Log($"呼叫状态回显（{sw.ElapsedMilliseconds} ms）：{result}");
+                                }
+
+                                // 回显里出现命令提示符（dmkj...#）说明这条命令已经执行完
+                                if (ConfigUtil.IsCommandEndFlag(result)) break;
+
+                                Thread.Sleep(200);
+                            }
+
+                            isFirstCall = true;
+                            Log($"SIP 呼叫状态查询结束：耗时 {sw.ElapsedMilliseconds} ms");
+
+                            //本次查询时间3s后，开始下一次查询
+                            await Task.Run(() =>
+                            {
+                                while (true)
+                                {
+                                    if (sw.ElapsedMilliseconds > 3000)
+                                    {
+                                        break;
+                                    }
+                                    Thread.Sleep(100);
+                                }
+                            });
+
+                        }
+                        catch (Exception ex)
+                        {
+                            Log($"SIP 呼叫状态查询出错：{ex.Message}");
+                            _isSipUserCall = false;
+                            break;
+                        }
+                    }
+                });
+            }
 
             //Log($"开始查询板卡 {slotNo} 的 SIP 用户状态");
 
@@ -500,28 +510,44 @@ namespace getway.ViewModel
         //---------------------编辑热线--------------------------
 
 
+
         public void QueryHotLine(object paramter)
+        {
+            string phoneNum = (string)paramter;
+            string ip = IP;
+            IpcUserModel model = getIpcUser(phoneNum);
+
+            Dictionary<string, string> dic = HotLineDB.QueryHotLine(model.FSP, ip);
+            model.HotlinePhone = dic.GetValueOrDefault("hotnum", "");
+            model.HotlineTime = dic.GetValueOrDefault("hottime", "");
+
+            sipUserView = new EditorSipUserView(model.FSP, phoneNum, model.HotlinePhone, model.HotlineTime, IpcUserList);
+            sipUserView.ShowDialog();
+        }
+
+        public void QueryHotLineTelnet(object paramter)
         {
             string result = string.Empty;
             string key = DefaulConfig.GetBaseKey();
             string phoneNum = (string)paramter;
-            string hotlineNum = string.Empty;
-            string hotlinetime = string.Empty;
-
-
-            TelnetEvent.QueryHotLine(DefaulConfig.FrameId.ToString(), BoardNo, phoneNum);
-            result = TcpConnect.Receive(key);
             IpcUserModel model = getIpcUser(phoneNum);
+
+            TelnetEvent.QueryHotLine(key, model.FSP, phoneNum);
+            Thread.Sleep(300);
+            result = TcpConnect.Receive(key, "dmkj(config-esl-user)#", 5000);
             Dictionary<string, string> dic = TelnetEvent.MapContentString(result);
-            model.HotlinePhone = dic["hotlinenum"];
-            model.HotlineTime = dic["hottime"];
+            model.HotlinePhone = dic.GetValueOrDefault("hotlinenum", "");
+            model.HotlineTime = dic.GetValueOrDefault("hottime(s)", "");
+
+            //重置权限
+            TelnetEvent.ResetPerm(key);
 
             if (string.IsNullOrEmpty(result)) Log($"查询热线无回显：{phoneNum}");
             if (model == null) Log($"用户列表中未找到：{phoneNum}");
 
 
 
-            sipUserView = new EditorSipUserView(BoardNo, phoneNum, hotlineNum, hotlinetime);
+            sipUserView = new EditorSipUserView(BoardNo, phoneNum, model.HotlinePhone, model.HotlineTime, IpcUserList);
             sipUserView.ShowDialog();
 
         }

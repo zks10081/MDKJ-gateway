@@ -1,30 +1,28 @@
 ﻿using DMGatewayDemo.Util;
-using getway.Base;
 using getway.DB.TelnetConnect;
+using getway.Model;
 using getway.Util;
 using getway.View;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
-using System.Windows.Shapes;
 
 namespace getway.ViewModel
 {
     internal class EditSipUserViewModel : ViewModelBase
     {
-        private string _BoardPort;
-        public string BoardPort { get => _BoardPort; set => SetProperty(ref _BoardPort, value); }
+        private string _FSP;
+        public string FSP { get => _FSP; set => SetProperty(ref _FSP, value); }
         private string _UserPhone;
         public string UserPhone { get => _UserPhone; set => SetProperty(ref _UserPhone, value); }
         private string _HotLinePhone;
         public string HotLinePhone { get => _HotLinePhone; set => SetProperty(ref _HotLinePhone, value); }
         private string _HotLineTime;
         public string HotLineTime { get => _HotLineTime; set => SetProperty(ref _HotLineTime, value); }
+
+        public ObservableCollection<IpcUserModel> IpcUserList;
 
 
         private string oldTelno;
@@ -35,10 +33,12 @@ namespace getway.ViewModel
         private string key;
 
         public EditSipUserViewModel() { }
-        public EditSipUserViewModel(string boardport, string userphone, string hotlinephone, string hotlinetime) {
-            _BoardPort = boardport;
+        public EditSipUserViewModel(string fsp, string userphone, string hotlinephone, string hotlinetime, ObservableCollection<IpcUserModel> list)
+        {
+            IpcUserList = list;
+            _FSP = fsp;
             _UserPhone = userphone;
-            _HotLinePhone = hotlinephone;   
+            _HotLinePhone = hotlinephone;
             _HotLineTime = hotlinetime;
 
             //用于记录值是否更新
@@ -52,17 +52,14 @@ namespace getway.ViewModel
         public ICommand EditSipUserHotline => new ViewModelCommand(async param =>
         {
             string result = string.Empty;
-            bool isSuccess = true;
             //无变化则直接退出,或HotLinePhone的值特殊情况
-            if ( oldHotLinePhone == HotLinePhone && oldHotlineTime == HotLineTime)
-            {
-                if ((oldHotLinePhone == "" && HotLinePhone == "-") || (oldHotLinePhone == "-" && HotLinePhone == "")) CloseWindows(param);
-                if(oldTelno == UserPhone) CloseWindows(param);
-            }
+            if (oldHotLinePhone == HotLinePhone && oldHotlineTime == HotLineTime && oldTelno == UserPhone) CloseWindows(param);
+            CloseWindows(param);
 
             //修改用户号码
-            if(oldTelno != UserPhone)
+            if (oldTelno != UserPhone)
             {
+                bool isSuccess = false;
                 //校验格式
                 if (!ConfigUtil.IsPhoneNum(UserPhone))
                 {
@@ -71,22 +68,42 @@ namespace getway.ViewModel
                     return;
                 }
 
-                TelnetEvent.EditSipUserPhone(key, BoardPort, oldTelno, UserPhone);
-                result = TcpConnect.Receive(key);
-                checkReult(result);
+                TelnetEvent.EditSipUserPhone(key, FSP, oldTelno, UserPhone);
+                //result = TcpConnect.Receive(key, "dmkj(config-esl-user)#", 5000);
+                await Task.Run(() =>
+                {
+                    //计时
+                    var sw = Stopwatch.StartNew();
+                    while (true || sw.ElapsedMilliseconds < 5000)
+                    {
+                        result = TcpConnect.Receive(key);
+
+                        isSuccess = checkReult(result);
+
+                        if (isSuccess) break;
+
+                    }
+                });
 
                 if (!isSuccess)
                 {
                     return;
                 }
+                else
+                {   //将变化同步至数组
+                    getIpcUser(oldTelno).Name = UserPhone;
+                }
+
+                TelnetEvent.ResetPerm(key);
             }
 
 
             //修改热线信息
             if (oldHotLinePhone != HotLinePhone || oldHotlineTime != HotLineTime)
             {
+                bool isSuccess = false;
                 //校验格式
-                if (!ConfigUtil.IsPhoneNum(HotLinePhone))
+                if (!ConfigUtil.IsPhoneNum(HotLinePhone) || HotLinePhone == "-")
                 {
                     UserPhone = oldTelno;
                     MessageView.ShowWaring("热线号码格式错误");
@@ -99,22 +116,32 @@ namespace getway.ViewModel
                     return;
                 }
 
-                TelnetEvent.EditHotLine(key, BoardPort, UserPhone,HotLinePhone,HotLineTime);
+                TelnetEvent.EditHotLine(key, FSP, UserPhone, HotLinePhone, HotLineTime);
+                await Task.Run(() =>
+                {
+                    //计时
+                    var sw = Stopwatch.StartNew();
+                    while (true || sw.ElapsedMilliseconds < 5000)
+                    {
+                        result = TcpConnect.Receive(key);
 
+                        isSuccess = checkReult(result);
 
-                result = TcpConnect.Receive(key);
-                checkReult(result);
+                        if (isSuccess) break;
+
+                    }
+                });
 
                 if (!isSuccess)
                 {
                     return;
                 }
 
-                //成功则关闭窗口
-                CloseWindows(param);
-
+                TelnetEvent.ResetPerm(key);
 
             }
+            //成功则关闭窗口
+            CloseWindows(param);
 
         });
 
@@ -130,7 +157,7 @@ namespace getway.ViewModel
                 return true;
             }
             // 编辑热线的结束条件
-            if (result.Contains("Unknown command, the error locates at"))
+            else if (result.Contains("Unknown command, the error locates at"))
             {
                 if (DefaulConfig.IsDebug)
                 {
@@ -140,7 +167,7 @@ namespace getway.ViewModel
             }
 
             // Failure: Port 0/2/0 will be assigned telephone number 7088, but the telephone number has been occupied by another port
-            if (result.Contains("but the telephone number has been occupied by another port"))
+            else if (result.Contains("but the telephone number has been occupied by another port"))
             {
 
                 string x = string.Empty;
@@ -151,7 +178,7 @@ namespace getway.ViewModel
                 });
             }
 
-            if (result.Contains("System is busy, please retry after a while"))
+            else if (result.Contains("System is busy, please retry after a while"))
             {
                 Application.Current.Dispatcher.Invoke(() =>
                 {
@@ -159,7 +186,7 @@ namespace getway.ViewModel
                 });
             }
 
-            if (result.Contains("Failure:"))
+            else if (result.Contains("Failure:"))
             {
                 Application.Current.Dispatcher.Invoke(() =>
                 {
@@ -167,12 +194,21 @@ namespace getway.ViewModel
                 });
             }
 
-            if (result.Contains("Username or Domain invalid!"))
+            else if (result.Contains("Username or Domain invalid!"))
             {
                 Application.Current.Dispatcher.Invoke(() =>
                 {
                     MessageView.ShowWaring("服务器异常，请重试");
                 });
+            }
+            else if (result.Contains("Command:"))
+            {
+                if (DefaulConfig.IsDebug)
+                {
+                    Console.WriteLine("修改成功");
+                }
+                return true;
+
             }
             return false;
 
@@ -180,7 +216,7 @@ namespace getway.ViewModel
         }
 
         // 取消按钮
-        public ICommand ColseGetWay => new ViewModelCommand(param =>
+        public ICommand Cancel => new ViewModelCommand(param =>
         {
             CloseWindows(param);
         });
@@ -201,6 +237,20 @@ namespace getway.ViewModel
 
             //new CheckLineView(IP, FSP, Telno).ShowDialog();
         });
+
+        public IpcUserModel getIpcUser(string phoneNum)
+        {
+            if (string.IsNullOrEmpty(phoneNum)) return null;
+
+            foreach (IpcUserModel item in IpcUserList)
+            {
+                if (phoneNum.Equals(item.Name))
+                {
+                    return item;
+                }
+            }
+            return null;
+        }
 
     }
 }

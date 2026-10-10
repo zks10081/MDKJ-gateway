@@ -1,17 +1,8 @@
-﻿using getway.ViewModel;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using getway.Base;
+using getway.ViewModel;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 
 namespace getway.View
 {
@@ -24,6 +15,11 @@ namespace getway.View
         {
             InitializeComponent();
             this.DataContext = new DigitMapViewModel();
+        }
+        public DigitMapView(string digitMapContent, ILogSink _logSink)
+        {
+            InitializeComponent();
+            this.DataContext = new DigitMapViewModel(digitMapContent, _logSink);
         }
 
         /// <summary>

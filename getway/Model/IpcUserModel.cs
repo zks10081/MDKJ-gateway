@@ -2,7 +2,7 @@
 
 namespace getway.Model
 {
-    internal class IpcUserModel : ViewModelBase
+    public class IpcUserModel : ViewModelBase
     {
 
         private string _Name;

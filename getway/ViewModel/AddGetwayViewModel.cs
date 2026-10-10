@@ -14,9 +14,8 @@ namespace getway.ViewModel
         private string _GetwayIp;
 
         ObservableCollection<GetWayModel> _NowGatewayList;
-
-
         public string GetwayIp { get => _GetwayIp; set => SetProperty(ref _GetwayIp, value); }
+
 
         public AddGetwayViewModel(ObservableCollection<GetWayModel> list)
         {

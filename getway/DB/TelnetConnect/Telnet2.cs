@@ -145,6 +145,40 @@ namespace getway.DB.TelnetConnect
             }
 
         }
+        /// <summary>
+        /// 清空 NetworkStream 接收缓冲区中残留的旧数据
+        /// </summary>
+        public void ClearReceiveBuffer()
+        {
+            if (Client == null)
+                return;
+            if (ns == null || !ns.CanRead)
+                return;
+
+            byte[] dump = new byte[4096];
+
+            // 设置一个很短的读取超时，防止最后一点数据读不到时无限阻塞
+            int oldTimeout = ns.ReadTimeout;
+            ns.ReadTimeout = 100;
+
+            try
+            {
+                while (Client.Available > 0)
+                {
+                    int count = ns.Read(dump, 0, dump.Length);
+                    if (count <= 0)
+                        break;
+                }
+            }
+            catch (IOException)
+            {
+                // 超时或连接异常时停止清理
+            }
+            finally
+            {
+                ns.ReadTimeout = oldTimeout;
+            }
+        }
 
         /// <summary>
         /// 接收
@@ -200,15 +234,19 @@ namespace getway.DB.TelnetConnect
             string line = string.Empty;
             if (Connected && ns != null && ns.CanRead)
             {
-
-                StreamReader input = new StreamReader(ns);
-                if (input == null) return null;
-                do
+                // 设置读取超时，单位毫秒，例如 3 秒
+                ns.ReadTimeout = 3000;
+                using var reader = new StreamReader(ns, Encoding.UTF8, leaveOpen: true);
+                if (reader == null) return "";
+                int lineCount = 0;
+                while (true)
                 {
-                    line = input.ReadLine();
-                    if (string.IsNullOrEmpty(line)) break;
+                    if (reader == null) break;
+                    line = reader.ReadLine();
+                    if (line == null) break;
+
                     result.AppendLine(line);
-                } while (true);
+                } while (true) ;
             }
             string info = result.ToString().Trim();
             //处理一些情况
@@ -216,6 +254,51 @@ namespace getway.DB.TelnetConnect
 
             return result.ToString().Trim();
         }
+
+        public string Receive(string terminator, int timeoutMs)
+        {
+            ns.ReadTimeout = timeoutMs;
+            ClearReceiveBuffer();
+
+            byte[] buffer = new byte[1024];
+            var received = new StringBuilder();
+            int maxBytes = 1024 * 100; // 防止死循环
+
+            try
+            {
+                while (received.Length < maxBytes)
+                {
+                    int bytesRead = ns.Read(buffer, 0, buffer.Length);
+                    if (bytesRead == 0)
+                        break;
+
+                    string chunk = Encoding.UTF8.GetString(buffer, 0, bytesRead);
+                    received.Append(chunk);
+
+                    int index = received.ToString().IndexOf(terminator);
+                    if (index >= 0)
+                    {
+                        // 返回终止符及之前的所有内容
+                        return received.ToString(0, index + terminator.Length);
+                    }
+                }
+            }
+            catch (IOException ex) when (ex.InnerException is SocketException)
+            {
+                // 超时或对端无响应
+                // 返回已收到的部分，或者抛出自定义异常
+            }
+
+            string result = received.ToString();
+            if (string.IsNullOrEmpty(result))
+                throw new TimeoutException($"读取超时，未收到终止符 '{terminator}'");
+
+            //处理一些情况
+            ResultCheck(received);
+
+            return received.ToString().Trim();
+        }
+
         /// <summary>
         /// 发送
         /// </summary>

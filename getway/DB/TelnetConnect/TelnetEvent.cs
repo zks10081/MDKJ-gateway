@@ -108,7 +108,11 @@ namespace getway.DB.TelnetConnect
             }
             while (true);
 
+            telnet.ClearReceiveBuffer();
+
         }
+
+        //---------------------------热线配置-----------------------------------
 
         /// <summary>
         /// 查询热线配置信息
@@ -116,19 +120,19 @@ namespace getway.DB.TelnetConnect
         /// <param name="key"></param>
         /// <param name="boardport"></param>
         /// <param name="userphone"></param>
-        public static void QueryHotLine(string key, string boardport, string userphone)
+        public static void QueryHotLine(string key, string fsp, string userphone)
         {
             Telnet2 telnet = TcpConnect.GetTelnet(key);
             string result = string.Empty;
 
             telnet.Send("enable" + Environment.NewLine);
-            result = telnet.Receive();
             telnet.Send("config" + Environment.NewLine);//进入config模式
-            result = telnet.Receive();
             telnet.Send("esl user" + Environment.NewLine);//进入esl user模式
-            result = telnet.Receive();
 
-            telnet.Send($"display sippstnuser servicedata {boardport} telno {userphone}" + Environment.NewLine);
+            //清理读取缓存
+            telnet.ClearReceiveBuffer();
+
+            telnet.Send($"display sippstnuser servicedata {fsp} telno {userphone}" + Environment.NewLine);
 
         }
 
@@ -139,19 +143,19 @@ namespace getway.DB.TelnetConnect
         /// <param name="boardport"></param>
         /// <param name="olduserphone"></param>
         /// <param name="userphone"></param>
-        public static void EditSipUserPhone(string key, string boardport, string olduserphone, string userphone)
+        public static void EditSipUserPhone(string key, string fsp, string olduserphone, string userphone)
         {
             Telnet2 telnet = TcpConnect.GetTelnet(key);
             string result = string.Empty;
 
-            telnet.Send("enable" + Environment.NewLine);
+            telnet.Send("enable");
             result = telnet.Receive();
-            telnet.Send("config" + Environment.NewLine);//进入config模式
+            telnet.Send("config");//进入config模式
             result = telnet.Receive();
-            telnet.Send("esl user" + Environment.NewLine);//进入esl user模式
+            telnet.Send("esl user");//进入esl user模式
             result = telnet.Receive();
 
-            telnet.Send($"sippstnuser modify {boardport} mgid {olduserphone} telno {userphone}" + Environment.NewLine);
+            telnet.Send($"sippstnuser modify {fsp} mgid {DefaulConfig.MGID} telno {userphone}" + Environment.NewLine);
 
         }
 
@@ -163,7 +167,7 @@ namespace getway.DB.TelnetConnect
         /// <param name="userphone"></param>
         /// <param name="hotlinephone"></param>
         /// <param name="hotlinetime"></param>
-        public static void EditHotLine(string key, string boardport, string userphone, string hotlinephone, string hotlinetime)
+        public static void EditHotLine(string key, string fsp, string userphone, string hotlinephone, string hotlinetime)
         {
             Telnet2 telnet = TcpConnect.GetTelnet(key);
             string result = string.Empty;
@@ -173,12 +177,10 @@ namespace getway.DB.TelnetConnect
             result = telnet.Receive();
             telnet.Send("esl user" + Environment.NewLine);//进入esl user模式
             result = telnet.Receive();
-            telnet.Send($"sippstnuser rightflag set {boardport} telno {userphone} hotline enable" + Environment.NewLine);
+            telnet.Send($"sippstnuser rightflag set {fsp} telno {userphone} hotline enable" + Environment.NewLine);
             Thread.Sleep(300);
-            telnet.Receive();
-            telnet.Send($"sippstnuser servicedata parameter set {boardport} telno {userphone} hottime {hotlinetime} hotlinenum {hotlinephone}" + Environment.NewLine);
+            telnet.Send($"sippstnuser servicedata parameter set {fsp} telno {userphone} hottime {hotlinetime} hotlinenum {hotlinephone}" + Environment.NewLine);
             Thread.Sleep(300);
-            telnet.Receive();
 
         }
         //---------------------------拨号规则操控--------------------------
@@ -271,11 +273,13 @@ namespace getway.DB.TelnetConnect
             string result = string.Empty;
 
             telnet.Send("enable" + Environment.NewLine);
-            result = telnet.Receive();
             telnet.Send("config" + Environment.NewLine);//进入config模式
             result = telnet.Receive();
 
-            telnet.Send($"local-digitmap delete all" + Environment.NewLine);
+            telnet.Send($"local-digitmap delete all" + Environment.NewLine + "y");
+            result = telnet.Receive();
+            //telnet.Send($"y" + Environment.NewLine);
+            //result = telnet.Receive();
 
         }
 
@@ -286,19 +290,17 @@ namespace getway.DB.TelnetConnect
         /// 删除全部SIP用户
         /// </summary>
         /// <param name="key"></param>
-        public static async Task SipUserDeleteAll(string key, string frameid, string slotid)
+        public static void SipUserDeleteAll(string key, string frameid, string slotid)
         {
             Telnet2 telnet = TcpConnect.GetTelnet(key);
             string result = string.Empty;
 
             telnet.Send("enable" + Environment.NewLine);
-            result = telnet.Receive();
             telnet.Send("config" + Environment.NewLine);//进入config模式
-            result = telnet.Receive();
             telnet.Send("esl user" + Environment.NewLine);//进入esl user模式
             result = telnet.Receive();
 
-            telnet.Send($"sippstnuser batdel {frameid}/{slotid}/0 {frameid}/{slotid}/63" + Environment.NewLine);
+            telnet.Send($"sippstnuser batdel {frameid}/{slotid}/0 {frameid}/{slotid}/63" + Environment.NewLine + "y");
 
         }
 

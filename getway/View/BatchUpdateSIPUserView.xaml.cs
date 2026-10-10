@@ -1,4 +1,5 @@
-﻿using getway.ViewModel;
+﻿using getway.Base;
+using getway.ViewModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -10,10 +11,10 @@ namespace getway.View
     /// </summary>
     public partial class BatchUpdateSIPUserView : Window
     {
-        public BatchUpdateSIPUserView(string board)
+        public BatchUpdateSIPUserView(ILogSink _logSink, string board)
         {
             InitializeComponent();
-            DataContext = new BatchUpdateSIPUserViewModel(board);
+            DataContext = new BatchUpdateSIPUserViewModel(_logSink, board);
         }
 
         /// <summary>
