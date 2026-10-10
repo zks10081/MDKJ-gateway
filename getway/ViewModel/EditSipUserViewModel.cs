@@ -1,4 +1,5 @@
 ﻿using DMGatewayDemo.Util;
+using getway.DB.Pg;
 using getway.DB.TelnetConnect;
 using getway.Model;
 using getway.Util;
@@ -54,7 +55,6 @@ namespace getway.ViewModel
             string result = string.Empty;
             //无变化则直接退出,或HotLinePhone的值特殊情况
             if (oldHotLinePhone == HotLinePhone && oldHotlineTime == HotLineTime && oldTelno == UserPhone) CloseWindows(param);
-            CloseWindows(param);
 
             //修改用户号码
             if (oldTelno != UserPhone)
@@ -136,10 +136,17 @@ namespace getway.ViewModel
                 {
                     return;
                 }
+                else
+                {
+                    //更新数据库内信息
+                    HotLineDB.UpdateHotLine(FSP, DefaulConfig.GetwayIp, UserPhone, HotLineTime, HotLinePhone);
+                }
 
                 TelnetEvent.ResetPerm(key);
 
             }
+            //更新数据库内信息
+            HotLineDB.UpdateHotLine(FSP, DefaulConfig.GetwayIp, UserPhone, HotLineTime, HotLinePhone);
             //成功则关闭窗口
             CloseWindows(param);
 

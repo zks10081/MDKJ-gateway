@@ -18,6 +18,10 @@ namespace getway.Model
         private bool _IsEnable;
         public bool IsEnable { get => _IsEnable; set => SetProperty(ref _IsEnable, value); }
 
+        private bool _IsSelect = false;
+        public bool IsSelect { get => _IsSelect; set => SetProperty(ref _IsSelect, value); }
+
+
 
 
     }

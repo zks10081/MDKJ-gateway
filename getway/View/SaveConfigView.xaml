@@ -96,7 +96,7 @@
                 Width="100"
                 Margin="40,5,0,5"
                 Background="LightGray"
-                Command="{Binding ColseBatchUpdate}"
+                Command="{Binding Cancel}"
                 CommandParameter="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Window}}}"
                 Content="取消"
                 Style="{StaticResource LoginButtonStyle}" />

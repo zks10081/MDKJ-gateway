@@ -174,8 +174,8 @@
                     <ControlTemplate TargetType="ListBoxItem">
                         <Border
                             Name="itemBorder"
-                            Height="30"
-                            Margin="3,2"
+                            Height="40"
+                            Margin="3,10"
                             Background="Transparent"
                             CornerRadius="4">
                             <ContentPresenter Margin="8,0" VerticalAlignment="Center" />
@@ -404,14 +404,14 @@
                                     <TextBlock
                                         VerticalAlignment="Center"
                                         FontFamily="{StaticResource iconfont}"
-                                        FontSize="12"
+                                        FontSize="16"
                                         Foreground="White"
                                         Text="&#xe67d;" />
                                     <TextBlock
                                         Margin="8,0,0,0"
                                         VerticalAlignment="Center"
                                         FontFamily="{StaticResource tihei}"
-                                        FontSize="12"
+                                        FontSize="16"
                                         Foreground="White"
                                         Text="{Binding IP}" />
                                 </StackPanel>
@@ -446,8 +446,8 @@
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
                         Orientation="Horizontal">
-                        <TextBlock Style="{StaticResource PanelHeaderIcon}" Text="&#xe626;" />
-                        <TextBlock Style="{StaticResource PanelHeaderText}" Text="操作控制" />
+                        <TextBlock Style="{StaticResource PanelHeaderIcon}" Text="&#xe62b;" />
+                        <TextBlock Style="{StaticResource PanelHeaderText}" Text="网关控制" />
                     </StackPanel>
                 </Border>
 
@@ -456,53 +456,103 @@
                         Command="{Binding AddConnectCommand}"
                         Content="连接"
                         Style="{StaticResource ButtonStyle}"
-                        Tag="&#xe626;" />
+                        Tag="&#xe626;"
+                        Visibility="{Binding DebugShow}" />
                     <Button
                         Command="{Binding QueryBoardCommand}"
                         Content="查询板子"
                         Style="{StaticResource ButtonStyle}"
-                        Tag="&#xe626;" />
+                        Tag="&#xe626;"
+                        Visibility="{Binding DebugShow}" />
                     <Button
                         Command="{Binding QuerySIPUserCommand}"
                         Content="查询sip用户"
                         Style="{StaticResource ButtonStyle}"
-                        Tag="&#xe626;" />
-                    <TextBox Style="{StaticResource CommandInputStyle}" Text="{Binding AnyCommandString}" />
+                        Tag="&#xe626;"
+                        Visibility="{Binding DebugShow}" />
+                    <TextBox
+                        Style="{StaticResource CommandInputStyle}"
+                        Text="{Binding AnyCommandString}"
+                        Visibility="{Binding DebugShow}" />
                     <Button
                         Command="{Binding QueryCommand}"
                         Content="执行命令"
                         Style="{StaticResource ButtonStyle}"
-                        Tag="&#xe626;" />
+                        Tag="&#xe626;"
+                        Visibility="{Binding DebugShow}" />
                     <Button
                         Command="{Binding ResetPermCommand}"
                         Content="重置权限"
                         Style="{StaticResource ButtonStyle}"
-                        Tag="&#xe626;" />
+                        Tag="&#xe626;"
+                        Visibility="{Binding DebugShow}" />
+                    <Border
+                        Margin="0,16,0,10"
+                        Style="{StaticResource PanelHeader}"
+                        Visibility="{Binding DebugShow}">
+                        <StackPanel
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Orientation="Horizontal">
+                            <TextBlock Style="{StaticResource PanelHeaderIcon}" Text="&#xe62b;" />
+                            <TextBlock Style="{StaticResource PanelHeaderText}" Text="网关控制" />
+                        </StackPanel>
+                    </Border>
                     <Button
                         Command="{Binding AddGetwayCommand}"
                         Content="添加网关"
                         Style="{StaticResource ButtonStyle}"
-                        Tag="&#xe626;" />
+                        Tag="&#xeafc;" />
                     <Button
                         Command="{Binding DeleteGetwayCommand}"
                         Content="删除网关"
                         Style="{StaticResource ButtonStyle}"
-                        Tag="&#xe626;" />
+                        Tag="&#xe603;"
+                        Visibility="{Binding GetwayShow}" />
+
+                    <Border
+                        Margin="0,16,0,10"
+                        Style="{StaticResource PanelHeader}"
+                        Visibility="{Binding BorderShow}">
+                        <StackPanel
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Orientation="Horizontal">
+                            <TextBlock Style="{StaticResource PanelHeaderIcon}" Text="&#xe62b;" />
+                            <TextBlock Style="{StaticResource PanelHeaderText}" Text="用户操控" />
+                        </StackPanel>
+                    </Border>
                     <Button
                         Command="{Binding BatchUpdateSipUserCommad}"
                         Content="批量修改用户"
                         Style="{StaticResource ButtonStyle}"
-                        Tag="&#xe626;" />
+                        Tag="&#xe626;"
+                        Visibility="{Binding BorderShow}" />
+
+                    <Border
+                        Margin="0,16,0,10"
+                        Style="{StaticResource PanelHeader}"
+                        Visibility="{Binding GetwayShow}">
+                        <StackPanel
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Orientation="Horizontal">
+                            <TextBlock Style="{StaticResource PanelHeaderIcon}" Text="&#xe62b;" />
+                            <TextBlock Style="{StaticResource PanelHeaderText}" Text="系统控制" />
+                        </StackPanel>
+                    </Border>
                     <Button
                         Command="{Binding DigitMapCommand}"
                         Content="拨号计划"
                         Style="{StaticResource ButtonStyle}"
-                        Tag="&#xe626;" />
+                        Tag="&#xe626;"
+                        Visibility="{Binding GetwayShow}" />
                     <Button
                         Command="{Binding SaveConfigCommand}"
                         Content="保存配置"
                         Style="{StaticResource ButtonStyle}"
-                        Tag="&#xe626;" />
+                        Tag="&#xe626;"
+                        Visibility="{Binding GetwayShow}" />
                 </StackPanel>
 
                 <Border Grid.Row="4" Style="{StaticResource PanelHeader}">

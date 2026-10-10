@@ -35,6 +35,27 @@ namespace getway.ViewModel
         public ICommand DigitMapCommand { get; set; }
         public ICommand SaveConfigCommand { get; set; }
 
+
+
+        private string _AnyCommandString;
+        private string _QueryStatusIcon;
+        private string _QueryStatusColor;
+        private string _QueryStatusText;
+        //操控按钮显示
+        private string _DebugShow;
+        private string _GetwayShow;
+        private string _BorderShow;
+
+        public string AnyCommandString { get => _AnyCommandString; set => SetProperty(ref _AnyCommandString, value); }
+        public string QueryStatusIcon { get => _QueryStatusIcon; set => SetProperty(ref _QueryStatusIcon, value); }
+        public string QueryStatusColor { get => _QueryStatusColor; set => SetProperty(ref _QueryStatusColor, value); }
+        public string QueryStatusText { get => _QueryStatusText; set => SetProperty(ref _QueryStatusText, value); }
+        public string DebugShow { get => _DebugShow; set => SetProperty(ref _DebugShow, value); }
+        public string GetwayShow { get => _GetwayShow; set => SetProperty(ref _GetwayShow, value); }
+        public string BorderShow { get => _BorderShow; set => SetProperty(ref _BorderShow, value); }
+
+
+
         // 日志缓冲：界面绑定的是 ReadContent 字符串，追加内容后必须主动通知刷新
         // 子 ViewModel 会从后台线程写日志，所以读写都要加锁
         private readonly StringBuilder _readContent = new StringBuilder();
@@ -63,15 +84,6 @@ namespace getway.ViewModel
             // 后台线程触发的 PropertyChanged，WPF 绑定会自动封送到 UI 线程
             OnPropertyChanged(nameof(ReadContent));
         }
-
-        private string _AnyCommandString;
-        private string _QueryStatusIcon;
-        private string _QueryStatusColor;
-        private string _QueryStatusText;
-        public string AnyCommandString { get => _AnyCommandString; set => SetProperty(ref _AnyCommandString, value); }
-        public string QueryStatusIcon { get => _QueryStatusIcon; set => SetProperty(ref _QueryStatusIcon, value); }
-        public string QueryStatusColor { get => _QueryStatusColor; set => SetProperty(ref _QueryStatusColor, value); }
-        public string QueryStatusText { get => _QueryStatusText; set => SetProperty(ref _QueryStatusText, value); }
 
 
         // 子 ViewModel：由父 ViewModel 持有，在连接建立后再注入 key
@@ -119,6 +131,7 @@ namespace getway.ViewModel
 
             _ = InitAsync();
             QueryStatusFun(0, "");//初始化查询状态显示
+            InitShow();
         }
 
         /// <summary>
@@ -136,7 +149,7 @@ namespace getway.ViewModel
             }
             else if (status == 2)
             {
-                QueryStatusIcon = "/ue614";
+                QueryStatusIcon = "\ue632";
                 QueryStatusColor = "#cbcccc";
 
             }
@@ -200,6 +213,13 @@ namespace getway.ViewModel
                 TcpConnect.CloseAll();
                 //终止所有查询
                 IpcItemVM.InitQueryTag();
+                //板卡和sip都恢复默认状态
+                IpcItemVM.SelectBorder = null;
+                IpcItemVM.SelectFlag(null);
+
+                //调整显示
+                InitShow();
+                GetwayShow = "Visible";
 
                 var connectTask = Task.Run(() => TcpConnect.AddTelnet(key, ip, "root", "mduadmin"));
                 if (await Task.WhenAny(connectTask, Task.Delay(ConnectTimeoutMs)) != connectTask)
@@ -401,6 +421,47 @@ namespace getway.ViewModel
         {
             SaveConfigView saveConfigView = new SaveConfigView();
             saveConfigView.ShowDialog();
+        }
+
+        //------------------------方法---------------------------------
+
+        public void InitShow()
+        {
+            DebugShow = "Collapsed";
+            GetwayShow = "Collapsed";
+            BorderShow = "Collapsed";
+        }
+
+        /// <summary>
+        /// 改变板卡选中显示
+        /// </summary>
+        /// <param name="action">open 开启显示，close 关闭显示</param>
+        public void ChangBorderShow(string action)
+        {
+            if ("open".Equals(action))
+            {
+                BorderShow = "Visible";
+            }
+            else if ("open".Equals(action))
+            {
+                BorderShow = "Collapsed";
+            }
+        }
+
+        public void QuerySipUserDataSwitch(string str)
+        {
+            if ("open".Equals(str))
+            {
+                //初始化回显
+                IpcItemVM.InitFirst();
+                //重启sip查询
+                IpcItemVM.RefreshIpcAsync();
+            }
+            else if ("open".Equals(str))
+            {
+                //终止所有查询
+                IpcItemVM.InitQueryTag();
+            }
         }
 
     }

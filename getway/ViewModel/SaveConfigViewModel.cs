@@ -2,6 +2,8 @@
 using getway.DB.TelnetConnect;
 using getway.Util;
 using getway.View;
+using System.Diagnostics;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Input;
@@ -43,15 +45,18 @@ namespace getway.ViewModel
             SaveStatus = 1;
             _TipText = "保存配置需要几分钟，请等待";
             string result = string.Empty;
+            StringBuilder readOnly = new StringBuilder();
 
             TelnetEvent.SaveConfig(key);
 
             await Task.Run(() =>
             {
-                string line = "";
-                while (true)
+                //计时
+                var sw = Stopwatch.StartNew();
+                while (true && sw.ElapsedMilliseconds < 90000)
                 {
                     result = TcpConnect.Receive(key);
+                    readOnly.AppendLine(result);
                     if (result == null) break;
 
                     if (result.Contains("no need to save again"))
@@ -59,9 +64,9 @@ namespace getway.ViewModel
                         TipText = $"配置已保存，无需再次保存配置！";
                         break;
                     }
-                    else if (line.Contains("control board is saved"))
+                    else if (result.Contains("control board is saved"))
                     {
-                        SaveStatus = 2;
+                        SaveStatus = 3;
                         _TipText = "配置保存成功";
                         Application.Current.Dispatcher.Invoke(() =>
                         {
@@ -82,7 +87,7 @@ namespace getway.ViewModel
                     else if (result.Contains("control board is:"))
                     {
                         //[2017-05-05 16:08:44+08:00]:The percentage of saved data on 0 slot's control board is: 27%
-                        var pattern = @"control board is:(\d+)%";
+                        var pattern = @"control board is: (\d+)%";
                         var matches = Regex.Matches(result, pattern);
                         foreach (Match item in matches)
                         {
@@ -90,12 +95,12 @@ namespace getway.ViewModel
                             TipText = $"当前保存进度{Progress}%";
                         }
                     }
-                    else
+                    else if (result.Contains("please wait"))
                     {
                         TipText = $"正在保存，请稍等！";
                     }
 
-
+                    Thread.Sleep(200);
                 }
             });
 
@@ -103,12 +108,17 @@ namespace getway.ViewModel
             {
                 CloseWindows(param);
             }
+            else if (SaveStatus == 1)
+            {
+                TipText = $"保存超时，请重试！";
+            }
 
+            Debug.WriteLine($"时间：{DateTime.Now:HH:mm:ss.fff}，内容：{readOnly.ToString()}");
 
         });
 
         // 取消按钮
-        public ICommand ColseGetWay => new ViewModelCommand(param =>
+        public ICommand Cancel => new ViewModelCommand(param =>
         {
             CloseWindows(param);
         });

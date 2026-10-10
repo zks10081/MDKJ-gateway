@@ -1,5 +1,4 @@
-﻿using System;
-using System.Windows.Input;
+﻿using System.Windows.Input;
 
 namespace DMGatewayDemo.Util
 {
@@ -28,6 +27,8 @@ namespace DMGatewayDemo.Util
         }
         public void Execute(object parameter)
         {
+            if (!CanExecute(parameter))
+                return;
             _executeAction(parameter);
         }
     }

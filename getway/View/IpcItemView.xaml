@@ -73,19 +73,32 @@
         </Style>
 
         <Style x:Key="borderStyle" TargetType="Button">
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="ToolTip" Value="{Binding BorderName}" />
             <Setter Property="Template">
                 <Setter.Value>
-                    <ControlTemplate>
+                    <ControlTemplate TargetType="Button">
                         <Grid>
-                            <Border Background="#1F6FA8" CornerRadius="5,5,0,0" />
-                            <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
+                            <!--  背景画在模板内的 Border 上，触发器必须带 TargetName 才能改到它  -->
+                            <Border
+                                x:Name="PART_Background"
+                                Background="#1F6FA8"
+                                BorderBrush="#2C7BB5"
+                                BorderThickness="1"
+                                CornerRadius="5,5,0,0" />
+                            <StackPanel
+                                Margin="20,0"
+                                HorizontalAlignment="Center"
+                                Orientation="Horizontal">
                                 <TextBlock
+                                    x:Name="PART_Icon"
                                     Margin="5,7,0,5"
                                     FontFamily="{StaticResource iconfont}"
                                     FontSize="18"
                                     Foreground="White"
                                     Text="&#xe605;" />
                                 <TextBlock
+                                    x:Name="PART_Text"
                                     Margin="5"
                                     FontSize="18"
                                     Foreground="White"
@@ -204,34 +217,85 @@
                     </Path.Stroke>
                 </Path>
 
-                <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
+                <!--  用 Grid 而不是 StackPanel：水平 StackPanel 会把 ListBox 压成内容宽度，无法均分  -->
+                <Grid Margin="10,0">
                     <ListBox
+                        HorizontalAlignment="Stretch"
                         d:ItemsSource="{d:SampleData ItemCount=4}"
                         Background="Transparent"
                         BorderBrush="Transparent"
                         ItemsSource="{Binding BorderList}"
+                        ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                         SelectedItem="{Binding SelectBorder}">
                         <ListBox.ItemsPanel>
                             <ItemsPanelTemplate>
-                                <StackPanel Orientation="Horizontal" />
+                                <!--  Rows=1 + 自动列：板卡数量变化时也始终一行均分，不用给列数  -->
+                                <UniformGrid Rows="1" />
                             </ItemsPanelTemplate>
                         </ListBox.ItemsPanel>
 
+                        <!--  容器必须与按钮一起禁用，否则 ListBoxItem 仍会被选中、仍有自带悬停/选中高亮  -->
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem">
+                                <!--  固定宽度120  -->
+                                <Setter Property="Width" Value="240" />
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                <Setter Property="VerticalContentAlignment" Value="Stretch" />
+                                <!--  ⭐ 核心：将数据对象的 IsEnable 绑定到容器的 IsEnabled  -->
+                                <Setter Property="IsEnabled" Value="{Binding IsEnable}" />
+                                <!--  去除默认焦点边框（按需保留）  -->
+                                <!--  Setter Property="FocusVisualStyle" Value="{x:Null}" />  -->
+                                <EventSetter Event="PreviewMouseLeftButtonDown" Handler="ListBoxItem_PreviewMouseLeftButtonDown" />
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="ListBoxItem">
+                                            <Border
+                                                x:Name="Bd"
+                                                Margin="20,0"
+                                                VerticalAlignment="Bottom"
+                                                Background="Transparent"
+                                                BorderBrush="Transparent"
+                                                BorderThickness="2"
+                                                CornerRadius="10,10,0,0">
+                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <!--  ✅ 正常选中高亮（IsEnabled=True 时生效）  -->
+                                                <DataTrigger Binding="{Binding IsSelect}" Value="True">
+                                                    <Setter TargetName="Bd" Property="Background" Value="#0079b7" />
+                                                    <Setter TargetName="Bd" Property="BorderBrush" Value="#00def3" />
+                                                </DataTrigger>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="Bd" Property="Background" Value="#027fc1" />
+                                                    <Setter TargetName="Bd" Property="BorderBrush" Value="#00def3" />
+                                                </Trigger>
+
+                                                <!--  ✅ 禁用时：强制清除选中视觉效果  -->
+                                                <Trigger Property="IsEnabled" Value="False">
+                                                    <Setter TargetName="Bd" Property="Opacity" Value="0.6" />
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+
+                            </Style>
+                        </ListBox.ItemContainerStyle>
 
                         <ListBox.ItemTemplate>
                             <DataTemplate>
+                                <!--  宽度交给 UniformGrid 均分，这里只需拉伸并留边距  -->
                                 <Button
-                                    Width="120"
-                                    Margin="10,5"
+                                    Margin="6,5"
+                                    Padding="10,5"
                                     Command="{Binding DataContext.SelectBorderCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                     CommandParameter="{Binding}"
-                                    IsEnabled="{Binding IsEnable}"
                                     Style="{StaticResource borderStyle}" />
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                     </ListBox>
+                </Grid>
 
-                </StackPanel>
             </Grid>
 
         </Border>

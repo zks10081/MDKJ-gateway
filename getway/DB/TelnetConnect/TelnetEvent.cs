@@ -359,7 +359,7 @@ namespace getway.DB.TelnetConnect
                 string status = match.Groups[3].Value;
 
                 //只有1-4才是板卡
-                if (slotNo > 0 || slotNo < 5) continue;
+                if (slotNo < 1 || slotNo > 4) continue;
 
                 // 列表里的槽位是固定的，按槽位找现有对象更新即可
                 BorderModel? model = borderList.FirstOrDefault(b => b.SlotNo == slotNo);

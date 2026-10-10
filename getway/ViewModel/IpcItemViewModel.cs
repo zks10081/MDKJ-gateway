@@ -7,6 +7,8 @@ using getway.Util;
 using getway.View;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Text;
+using System.Windows;
 using System.Windows.Input;
 
 namespace getway.ViewModel
@@ -29,24 +31,16 @@ namespace getway.ViewModel
             set => SetSelectBorder(value, CancellationToken.None);
         }
 
-        // 改选中项并触发用户列表刷新；token 用于丢弃过期结果
-        private void SetSelectBorder(BorderModel? border, CancellationToken token)
-        {
-            if (SetProperty(ref _SelectBorder, border))
-            {
-                // 停掉上一块板卡的轮询循环，再按新的槽位重新拉数据
-                BoardNo = border.SlotNo.ToString();
-                InitQueryTag();
 
-                RefreshIpcAsync();
-            }
-        }
 
         //板卡，sip用户注册、呼叫状态查询线程状态
         private bool _isBorder = false;
         private bool _isSipUserReg = false;
         private bool _isSipUserCall = false;
         private bool _isFirstQuery = true;//初次查询，要进行状态显示
+        private bool _isSipQueryStatus = true;
+        private bool _isSipUserCallStatus = false;
+        private bool _isSipUserRegStatus = false;
 
         private EditorSipUserView sipUserView;
         private CancellationTokenSource _cts;
@@ -67,6 +61,7 @@ namespace getway.ViewModel
         /// <summary>写一行日志；未注入日志出口时什么都不做</summary>
         private void Log(string text) => _logSink?.AppendLog(text);
         private void QuerStatus(int status, string tip) => _logSink?.QueryStatusFun(status, tip);
+        private void ChangBorderShow(string action) => _logSink?.ChangBorderShow(action);
 
 
         public IpcItemViewModel(ILogSink? logSink = null)
@@ -83,9 +78,51 @@ namespace getway.ViewModel
             TempSipUserInfo();
         }
 
-        /// <summary>
-        /// 由父 ViewModel 在 telnet 连接成功后注入，取数据前必须已有 key
-        /// </summary>
+        // 改选中项并触发用户列表刷新；token 用于丢弃过期结果
+        private void SetSelectBorder(BorderModel? border, CancellationToken token)
+        {
+            if (SetProperty(ref _SelectBorder, border))
+            {
+                if (border == null) return;
+                // 停掉上一块板卡的轮询循环，再按新的槽位重新拉数据
+                BoardNo = border?.SlotNo.ToString() ?? string.Empty;
+                //切换卡板选择状态
+                SelectFlag(border);
+                //开启卡板显示
+                ChangBorderShow("open");
+
+                //重置sip状态查询的线程标记
+                InitQueryTag();
+                //初始化回显
+                InitFirst();
+                //初始状态为false，后续重复进入跳过
+                Log($"切换板卡：{BoardNo}");
+                if (_isSipQueryStatus)
+                {
+                    _isSipQueryStatus = false;
+                    //当sip查询结束，才进行新的查询
+                    Task.Run(() =>
+                    {
+                        while (true)
+                        {
+                            if (!_isSipUserCallStatus && !_isSipUserRegStatus)
+                            {
+                                Log($"查询板卡：{BoardNo}");
+                                //重启新的板卡sip查询
+                                Application.Current.Dispatcher.Invoke(() =>
+                                {
+                                    RefreshIpcAsync();
+                                });
+                                _isSipQueryStatus = true;
+                                break;
+                            }
+                        }
+                    });
+                }
+            }
+        }
+
+        //由父 ViewModel调用方法
         public void SetIp(string ip) => IP = ip ?? string.Empty;
         public void InitFirst() => _isFirstQuery = true;
 
@@ -137,7 +174,7 @@ namespace getway.ViewModel
                 }
 
                 Log($"开始查询板卡：{ip}");
-
+                bool firstFlag = true;
                 while (!_cts.Token.IsCancellationRequested && _isBorder)
                 {
                     try
@@ -153,6 +190,11 @@ namespace getway.ViewModel
                         result = TcpConnect.Receive(key);
                         TelnetEvent.BorderString(result, BorderList);
 
+                        //if (firstFlag)
+                        //{
+                        //    firstFlag = false;
+                        //    continue;
+                        //}
                         await Task.Delay(4000, _cts.Token);
                     }
                     catch (OperationCanceledException) { break; }
@@ -208,6 +250,11 @@ namespace getway.ViewModel
                             QuerStatus(3, "加载成功");
                             break;
                         }
+                        if (!_isSipUserCall && !_isSipUserReg)
+                        {
+                            QuerStatus(4, "查询错误");
+                            break;
+                        }
                         if (out_flag > 40)
                         {
                             QuerStatus(4, "连接超时");
@@ -222,20 +269,24 @@ namespace getway.ViewModel
                 _isFirstQuery = false;
             }
 
-            if (!_isSipUserReg)
+            //当线程标记和占用状态，都false，才可以开新线程
+            if (!_isSipUserReg && !_isSipUserRegStatus)
             {
                 //起线程，后台循环查询sip用户注册状态
                 _isSipUserReg = true;
+                _isSipUserRegStatus = true;
                 Task.Run(async () =>
                 {
                     string name = DefaulConfig.QuerySIPUserRegStateUsername;
                     string password = DefaulConfig.QuerySIPUserRegStatePassword;
                     string key = ip + name;
+                    StringBuilder ReandCache = new StringBuilder();
 
                     if (TcpConnect.AddTelnet(ip + name, ip, name, password) == null)
                     {
                         Log($"SIP 注册状态查询连接失败：{ip}");
                         _isSipUserReg = false;
+                        _isSipUserCallStatus = false;
                         return;
                     }
 
@@ -255,6 +306,12 @@ namespace getway.ViewModel
                             {
                                 result = TcpConnect.Receive(key);
 
+                                //查询失败，终止查询
+                                if (result.Contains("Failure"))
+                                {
+                                    throw new Exception(result);
+                                }
+
                                 // 设备这次没吐数据：连续几次都没有就认为这条命令回显结束
                                 if (string.IsNullOrEmpty(result))
                                 {
@@ -265,13 +322,14 @@ namespace getway.ViewModel
 
                                 emptyCount = 0;
                                 TelnetEvent.SipUserRegString(result, IpcUserList);
+                                ReandCache.AppendLine($"时间：{DateTime.Now:HH:mm:ss.fff}，内容：\r{result}");
                                 if (DefaulConfig.Debug_ShowTelnet)
                                 {
                                     Log($"注册状态回显（{sw.ElapsedMilliseconds} ms）：{result}");
                                 }
 
                                 // 回显里出现命令提示符（dmkj...#）说明这条命令已经执行完
-                                if (ConfigUtil.IsCommandEndFlag(result)) break;
+                                if (ConfigUtil.IsCommandEndFlag(result) && sw.ElapsedMilliseconds > 500) break;
 
                                 Thread.Sleep(200);
 
@@ -279,7 +337,6 @@ namespace getway.ViewModel
 
                             isFirstReg = true;
                             Log($"SIP 注册状态查询成功：耗时{sw.ElapsedMilliseconds} ms");
-
                             //本次查询时间3s后，开始下一次查询
                             await Task.Run(() =>
                             {
@@ -296,23 +353,26 @@ namespace getway.ViewModel
                         }
                         catch (Exception ex)
                         {
-                            Log($"SIP 呼叫状态查询出错：{ex.Message}");
+                            string msg = ex.Message.Trim().Replace("\r\n", "").Replace("\n", "").Replace("\r", "").Replace("dmkj#", "");
+                            Log($"SIP 呼叫状态查询出错：{msg}");
                             _isSipUserReg = false;
                             break;
                         }
                     }
 
-
+                    Log($"SIP 注册状态查询结束：{ip}");
+                    _isSipUserRegStatus = false;
                 });
             }
 
-            if (!_isSipUserCall)
+            //当线程标记和占用状态，都false，才可以开新线程
+            if (!_isSipUserCall && !_isSipUserCallStatus)
             {
                 //起线程，后台循环查询sip用户呼叫状态
                 _isSipUserCall = true;
+                _isSipUserCallStatus = true;
                 Task.Run(async () =>
                 {
-
                     //获取配置信息
                     string name = DefaulConfig.QuerySIPUserCallStateUsername_1;
                     string password = DefaulConfig.QuerySIPUserCallStatePassword_1;
@@ -322,6 +382,7 @@ namespace getway.ViewModel
                     {
                         Log($"SIP 呼叫状态查询连接失败：{ip}");
                         _isSipUserCall = false;
+                        _isSipUserCallStatus = false;
                         return;
                     }
 
@@ -341,6 +402,12 @@ namespace getway.ViewModel
                             {
                                 result = TcpConnect.Receive(key);
 
+                                //查询失败，终止查询
+                                if (result.Contains("Failure"))
+                                {
+                                    throw new Exception(result);
+                                }
+
                                 // 设备这次没吐数据：连续几次都没有就认为这条命令回显结束
                                 if (string.IsNullOrEmpty(result))
                                 {
@@ -357,7 +424,7 @@ namespace getway.ViewModel
                                 }
 
                                 // 回显里出现命令提示符（dmkj...#）说明这条命令已经执行完
-                                if (ConfigUtil.IsCommandEndFlag(result)) break;
+                                if (ConfigUtil.IsCommandEndFlag(result) && sw.ElapsedMilliseconds > 500) break;
 
                                 Thread.Sleep(200);
                             }
@@ -381,11 +448,15 @@ namespace getway.ViewModel
                         }
                         catch (Exception ex)
                         {
-                            Log($"SIP 呼叫状态查询出错：{ex.Message}");
+                            string msg = ex.Message.Trim().Replace("\r\n", "").Replace("\n", "").Replace("\r", "").Replace("dmkj#", "");
+                            Log($"SIP 呼叫状态查询出错：{msg}");
                             _isSipUserCall = false;
                             break;
                         }
                     }
+
+                    Log($"SIP 呼叫状态查询结束：{ip}");
+                    _isSipUserCallStatus = false;
                 });
             }
 
@@ -462,10 +533,12 @@ namespace getway.ViewModel
             }
         }
 
+        //------------------处理数据方法--------------------
+
         //选择板卡运行方法
         private void SelectBorderExecute(object parameter)
         {
-            if (parameter is BorderModel border)
+            if (parameter is BorderModel border && border.IsEnable)
             {
                 SelectBorder = border;
             }
@@ -483,12 +556,11 @@ namespace getway.ViewModel
 
         public void TempSipUserInfo()
         {
-
             IpcUserList.Clear();
             for (int i = 0; i < 64; i++)
             {
                 string status = _random.Next(6).ToString();
-                IpcUserList.Add(new IpcUserModel() { Name = Convert.ToString(8002 + i), Status = status, FSP = $"0/1/{i}" });
+                IpcUserList.Add(new IpcUserModel() { Name = Convert.ToString(8002 + i), Status = "0", FSP = $"0/1/{i}" });
             }
             string a = "";
         }
@@ -505,6 +577,16 @@ namespace getway.ViewModel
                 }
             }
             return null;
+        }
+
+        public void SelectFlag(BorderModel model)
+        {
+            foreach (BorderModel item in BorderList)
+            {
+                item.IsSelect = false;
+            }
+            if (model == null) return;
+            model.IsSelect = true;
         }
 
         //---------------------编辑热线--------------------------

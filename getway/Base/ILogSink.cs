@@ -12,5 +12,9 @@ namespace getway.Base
         void AppendLog(string text);
 
         void QueryStatusFun(int status, string tip);
+
+        void ChangBorderShow(string action);
+
+        void QuerySipUserDataSwitch(string str);
     }
 }

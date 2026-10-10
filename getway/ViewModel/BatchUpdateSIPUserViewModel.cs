@@ -4,6 +4,7 @@ using getway.DB.TelnetConnect;
 using getway.Util;
 using getway.View;
 using System.Diagnostics;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Input;
@@ -23,6 +24,7 @@ namespace getway.ViewModel
 
         public ILogSink _logSink;
         private void Log(string text) => _logSink?.AppendLog(text);
+        private void QuerySipUserDataSwitch(string str) => _logSink?.QuerySipUserDataSwitch(str);
 
         public int _IsAddSuccess = 0;
         public string Key;
@@ -69,6 +71,8 @@ namespace getway.ViewModel
             List<string> CommandList = new List<string>();
             List<int> countList = new List<int>();
 
+            StringBuilder ReadCache = new StringBuilder();
+
             //标记
             int count = 0;
             int addCount = 0;
@@ -80,6 +84,7 @@ namespace getway.ViewModel
             int last_count = 0;
 
             //处理要生成的用户指令
+            ReadCache.AppendLine("----------------处理要生成的用户指令------------------");
             while (count < 64)
             {
                 string name = index.ToString();
@@ -102,12 +107,14 @@ namespace getway.ViewModel
                         string commandContent = $"sippstnuser add 0/{boardName}/{starFlagNo} 0 telno {starFlagName}";
                         CommandList.Add(commandContent);
                         countList.Add(count);
+                        ReadCache.AppendLine($"时间：{DateTime.Now:HH:mm:ss.fff}，添加指令：\r{commandContent}");
                     }
                     else if (addCount > 1)//大于则批量添加
                     {
                         string commandContent = $"sippstnuser batadd 0/{boardName}/{starFlagNo} 0/{boardName}/{last_count} 0 telno {starFlagName} step 1";
                         CommandList.Add(commandContent);
                         countList.Add(count);
+                        ReadCache.AppendLine($"时间：{DateTime.Now:HH:mm:ss.fff}，添加指令：\r{commandContent}");
                     }
 
                     if (count == 63) break;
@@ -131,14 +138,22 @@ namespace getway.ViewModel
 
 
             ActionContent = $"正在初始化用户数据。。。";
+            QuerySipUserDataSwitch("close");
+            ReadCache.AppendLine("----------------批量删除用户------------------");
             //批量删除用户
-            SipUserDelete(key);
+            bool deletflag = await SipUserDelete(key, ReadCache);
+            if (!deletflag)
+            {
+                MessageView.ShowWaring("初始化用户数据超时，请重试！");
+                return;
+            }
 
 
 
             ActionContent = $"正在添加用户。。。";
+            ReadCache.AppendLine("----------------执行生成指令------------------");
             //执行生成指令
-            SIPUserAddCommand(key, CommandList, countList);
+            SIPUserAddCommand(key, CommandList, countList, ReadCache);
 
             //获取状态显示
             await Task.Run(() =>
@@ -147,14 +162,15 @@ namespace getway.ViewModel
                 {
                     if (_IsAddSuccess != 0) break;//
 
-                    ActionContent = $"正在添加用户({index}/64)";
-                    Thread.Sleep(200);
-                    index++;
-                    if (index > 63) index = 63;
+                    ActionContent = $"正在添加用户({addIndex}/64)";
+                    Thread.Sleep(300);
+                    addIndex++;
+                    if (addIndex > 63) addIndex = 63;
                 }
                 if (_IsAddSuccess == 1)
                 {
                     ActionContent = $"正在添加用户(64/64)";
+
                 }
                 else
                 {
@@ -165,14 +181,18 @@ namespace getway.ViewModel
             //如果成功，关闭窗口
             if (_IsAddSuccess == 1)
             {
+                QuerySipUserDataSwitch("open");
                 CloseWindows(param);
             }
+            string log = ReadCache.ToString();
+            Debug.WriteLine($"日志打印：{log}");
 
         });
 
-        public void SipUserDelete(string key, int TotalTimeoutMs = 10000)
+        public async Task<bool> SipUserDelete(string key, StringBuilder read, int TotalTimeoutMs = 40000)
         {
-            Task.Run(async () =>
+            bool isuccess = false;
+            await Task.Run(async () =>
             {
                 try
                 {
@@ -187,13 +207,14 @@ namespace getway.ViewModel
                     while (true && sw.ElapsedMilliseconds < TotalTimeoutMs)
                     {
                         result = TcpConnect.Receive(key);
-                        Debug.WriteLine($"删除sip结果：{result}");
+                        read.AppendLine($"时间：{DateTime.Now:HH:mm:ss.fff}，内容：\r{result}");
+                        Debug.WriteLine($"耗时：{sw.ElapsedMilliseconds}ms，删除sip结果：{result}");
 
                         if (result.Contains("Username or Domain invalid") || result.Contains("System is busy"))
                         {
                             System.Windows.Application.Current.Dispatcher.Invoke(() =>
                             {
-                                MessageView.ShowWaring("有未完成的操作，请稍后再继续");
+                                MessageView.ShowWaring("有未完成的操作，请稍后再继续,删除方法");
                             });
                             return;
 
@@ -203,6 +224,7 @@ namespace getway.ViewModel
                             //删除成功
                             Console.WriteLine("删除完成");
                             Log($"删除完成！,耗时{sw.ElapsedMilliseconds}ms");
+                            isuccess = true;
                             break;
                         }
                         Thread.Sleep(300);
@@ -219,10 +241,11 @@ namespace getway.ViewModel
                 }
 
             });
+            return isuccess;
         }
 
 
-        public void SIPUserAddCommand(string key, List<string> list, List<int> countList, int TotalTimeoutMs = 10000)
+        public void SIPUserAddCommand(string key, List<string> list, List<int> countList, StringBuilder read, int TotalTimeoutMs = 10000)
         {
             Task.Run(() =>
             {
@@ -239,6 +262,7 @@ namespace getway.ViewModel
 
 
                 int index = 0;
+                int addsum = 0;
                 bool issunccess = true;
                 foreach (string item in list)
                 {
@@ -247,17 +271,39 @@ namespace getway.ViewModel
                         //计时
                         var sw = Stopwatch.StartNew();
                         //执行命令前，清空读取内容
-                        result = telnet.Receive();
+                        telnet.ClearReceiveBuffer();
                         //用户添加
                         telnet.Send(item);
+
+                        //计算本次查询超时时间
+                        int takeTime = countList[index] - addsum;
+                        if (takeTime > 30)
+                        {
+                            TotalTimeoutMs = 60000;
+                        }
+                        else if (takeTime > 20)
+                        {
+                            TotalTimeoutMs = 40000;
+                        }
+                        else if (takeTime > 10)
+                        {
+                            TotalTimeoutMs = 20000;
+                        }
+                        else
+                        {
+                            TotalTimeoutMs = 5000;
+                        }
+
 
                         int count = 0;
                         while (true && sw.ElapsedMilliseconds < TotalTimeoutMs)
                         {
+
                             count++;
                             result = TcpConnect.Receive(key);
 
                             Log($"执行命令{item}，第{count}次内容：{result}");
+                            read.AppendLine($"时间：{DateTime.Now:HH:mm:ss.fff}，执行指令{item}，\r内容：\r{result}");
                             Debug.WriteLine($"执行命令{item}，结果：{result}");
 
                             if (result.Contains("Command processing is completed") || result.Contains("successfully"))
@@ -285,10 +331,10 @@ namespace getway.ViewModel
                             {
                                 System.Windows.Application.Current.Dispatcher.Invoke(() =>
                                 {
-                                    MessageView.ShowWaring("有未完成的操作，请稍后再继续");
+                                    MessageView.ShowWaring("有未完成的操作，请稍后再继续，添加方法");
                                 });
                                 issunccess = false;
-                                return;
+                                break;
 
                             }
 
@@ -300,6 +346,7 @@ namespace getway.ViewModel
                     {
                         Log($"SIP 用户删除异常：{ex.Message}");
                     }
+                    addsum = countList[index];
                     index++;
                     //报错跳出循环
                     if (!issunccess) break;
