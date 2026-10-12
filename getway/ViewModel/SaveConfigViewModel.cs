@@ -15,7 +15,9 @@ namespace getway.ViewModel
 
 
         private string _TipText;
+        private bool _IsEdit = true;
         public string TipText { get => _TipText; set => SetProperty(ref _TipText, value); }
+        public bool IsEdit { get => _IsEdit; set => SetProperty(ref _IsEdit, value); }
 
         public int SaveStatus;
         public string key;
@@ -47,6 +49,9 @@ namespace getway.ViewModel
             string result = string.Empty;
             StringBuilder readOnly = new StringBuilder();
 
+            //设置连接占用状态
+            IsEdit = false;
+            TcpConnect.UpdateTake(key, 1);
             TelnetEvent.SaveConfig(key);
 
             await Task.Run(() =>
@@ -113,6 +118,8 @@ namespace getway.ViewModel
                 TipText = $"保存超时，请重试！";
             }
 
+            IsEdit = true;
+            TcpConnect.UpdateTake(key, 0);
             Debug.WriteLine($"时间：{DateTime.Now:HH:mm:ss.fff}，内容：{readOnly.ToString()}");
 
         });

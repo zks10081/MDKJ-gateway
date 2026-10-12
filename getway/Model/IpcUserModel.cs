@@ -9,6 +9,7 @@ namespace getway.Model
         public string Name { get => _Name; set => SetProperty(ref _Name, value); }
 
         /// <summary>
+        /// -1 ：初始化
         /// 0 ：离线
         /// 1 ：振铃
         /// 2 ：摘机

@@ -12,7 +12,11 @@ namespace getway.ViewModel
     class DigitMapViewModel : ViewModelBase
     {
         private string _DigtiMapContent;
+        private string _ActionContent;
+        private bool _IsEdit = true;
         public string DigtiMapContent { get => _DigtiMapContent; set => SetProperty(ref _DigtiMapContent, value); }
+        public string ActionContent { get => _ActionContent; set => SetProperty(ref _ActionContent, value); }
+        public bool IsEdit { get => _IsEdit; set => SetProperty(ref _IsEdit, value); }
 
         public string old_DigtiMapContent;
         public string key;
@@ -25,11 +29,13 @@ namespace getway.ViewModel
         public DigitMapViewModel()
         {
             key = DefaulConfig.GetBaseKey();
+
         }
         public DigitMapViewModel(string digitMapContent, ILogSink _logSink)
         {
             _DigtiMapContent = digitMapContent;
             key = DefaulConfig.GetBaseKey();
+
 
             //记录旧值
             old_DigtiMapContent = digitMapContent;
@@ -55,6 +61,9 @@ namespace getway.ViewModel
                 DigtiMapContent = old_DigtiMapContent;
                 return;
             }
+
+            IsEdit = false;
+            ActionContent = "修改中，请稍等！";
             string result = string.Empty;
 
             //清空拨号规则
@@ -127,6 +136,7 @@ namespace getway.ViewModel
 
             //权限复位
             TelnetEvent.ResetPerm(key);
+            IsEdit = true;
 
             CloseWindows(param);
 

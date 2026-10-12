@@ -1,4 +1,5 @@
 ﻿using getway.Util;
+using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
@@ -10,11 +11,25 @@ namespace getway.DB.TelnetConnect
     {
         private TcpClient Client;
         private NetworkStream ns;
+        public string _host { get; set; }
+        public string _name { get; set; }
+        public string _password { get; set; }
+        private readonly int BuffSize = 1024 * 4;
+        private CancellationTokenSource _cts;
+
         private string m_LogonPrompt = "User name:";
         private string m_PasswordPrompt = "User password:";
         private string m_SystemTimeTip = "Are you sure to modify system time? (y/n)[n]:";
-        private readonly int BuffSize = 1024 * 4;
-        private CancellationTokenSource _cts;
+
+        // 读写锁，防止心跳和业务命令冲突
+        private readonly SemaphoreSlim _syncLock = new SemaphoreSlim(1, 1);
+        // 后台保活任务的生命周期控制
+        private CancellationTokenSource _heartbeatCts = new CancellationTokenSource();
+        private Task _heartbeatTask;
+        // 连接状态
+        public bool IsConnected { get; private set; } = false;
+        //是否有任务
+        public bool IsTake = false;
 
         public bool isLogin { get; private set; }
 
@@ -36,6 +51,7 @@ namespace getway.DB.TelnetConnect
             set { m_PasswordPrompt = value; }
             get { return m_PasswordPrompt; }
         }
+
         /// <summary>
         /// 连接状态
         /// </summary>
@@ -43,6 +59,7 @@ namespace getway.DB.TelnetConnect
         {
             get { return Client != null ? Client.Connected : false; }
         }
+
 
         /// <summary>
         /// 连接远端主机
@@ -72,6 +89,7 @@ namespace getway.DB.TelnetConnect
             catch (Exception e)
             {
                 result = e.InnerException?.Message ?? e.Message;
+                Close();
             }
 
             return result;
@@ -84,40 +102,150 @@ namespace getway.DB.TelnetConnect
         /// <param name="username">用户名</param>
         /// <param name="password">密码</param>
         /// <param name="waitTime">连接等待时间</param>
+        /// <param name="isHeart">保活线程</param>
         /// <returns></returns>
-        public string Connect(string hostname, int port, string username, string password, int waitTime = 300)
+        public string Connect(string hostname, int port, string username, string password)
+        {
+            return Connect(hostname, port, username, password, false);
+        }
+        public string Connect(string hostname, int port, string username, string password, bool isHeart, int waitTime = 300)
         {
             string result = string.Empty;
             //未连通则先建立 TCP 连接并完成 telnet 协商（拿到 "User name:" 提示）
             if (!Connected)
             {
+                _host = hostname;
+                _name = username;
+                _password = password;
                 result = Connect(hostname, port);
             }
 
-
+            StringBuilder stringBuilder = new StringBuilder();
             if (Connected && result.EndsWith(LoginPrompt))
             {
-                Send(username, waitTime);
-                // 登录响应要给足时间，用比默认更长的读取窗口
-                result = Receive(5000);
-                if (result.EndsWith(PasswordPrompt))
+                Send($"{username}\r\n{password}\r\ny\r\n \r\nenable\r\n");
+                bool issuccess = false;
+                var sw = Stopwatch.StartNew();
+                while (!issuccess && sw.ElapsedMilliseconds < 5000)
                 {
-                    Send(password, waitTime);
                     result = Receive(5000);
+                    stringBuilder.Append($"内容：{result}");
+
                     if (result.EndsWith(DefaulConfig.Success_Flag))
                     {
                         isLogin = true;
                         Send("scroll 120", waitTime);
+                        issuccess = true;
+                        IsConnected = true;
                     }
-                    else
+                    Thread.Sleep(200);
+                }
+                string msg = stringBuilder.ToString();
+                if (!issuccess)
+                {
+                    Client.Close();
+                    result = "Logon Error";
+                }
+                else
+                {
+                    if (isHeart)
                     {
-                        Client.Close();
-                        result = "Logon Error";
+                        // 启动后台保活线程
+                        _heartbeatTask = HeartbeatLoopAsync(_heartbeatCts.Token);
                     }
                 }
+
             }
             return result;
         }
+
+
+
+        /// <summary>
+        /// 发送心跳包，检测设备存活
+        /// </summary
+        private async Task<bool> CheckAliveAsync(CancellationToken ct)
+        {
+            await _syncLock.WaitAsync(ct);
+            try
+            {
+                if (!IsConnected || Client == null || !Client.Connected) return false;
+
+                string heartbeatCmd = "display ssh server status\r\n \r\n";
+                byte[] data = Encoding.ASCII.GetBytes(heartbeatCmd);
+                await ns.WriteAsync(data, 0, data.Length, ct);
+
+                string response = Receive(5000);
+                return response.Contains(DefaulConfig.Success_Flag);
+            }
+            catch
+            {
+                return false;
+            }
+            finally
+            {
+                _syncLock.Release();
+            }
+        }
+
+        /// <summary>
+        /// 后台心跳与重连死循环
+        /// </summary>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        private async Task HeartbeatLoopAsync(CancellationToken ct)
+        {
+            while (!ct.IsCancellationRequested)
+            {
+                try
+                {
+                    await Task.Delay(30_000, ct); // 每 30 秒保活一次
+
+                    if (!IsTake) continue;
+                    if (!IsConnected) continue;
+
+                    bool alive = await CheckAliveAsync(ct);
+                    if (!alive)
+                    {
+                        Close();
+                        // 发现断线，尝试重连
+                        await AttemptReconnectAsync(ct);
+                    }
+                }
+                catch (OperationCanceledException) { break; }
+                catch { /* 忽略非致命异常，继续下一个循环 */ }
+            }
+        }
+
+        /// <summary>
+        /// 断线后的自动重连逻辑
+        /// </summary>
+        private async Task AttemptReconnectAsync(CancellationToken ct)
+        {
+            int maxRetries = 10;
+            int retryDelayMs = 5000;
+
+            for (int i = 0; i < maxRetries; i++)
+            {
+                if (ct.IsCancellationRequested) return;
+
+                try
+                {
+                    // 这里填入你的实际IP和端口
+                    Connect(_host, 23, _name, _password);
+                    IsConnected = true;
+                    // TODO: 在此处更新UI，提示“设备已重新连接成功”
+                    return;
+                }
+                catch
+                {
+                    IsConnected = false;
+                    // TODO: 在此处更新UI，提示“正在尝试第 {i+1} 次重连...”
+                    await Task.Delay(retryDelayMs, ct);
+                }
+            }
+        }
+
 
         //处理特殊结果
         public void ResultCheck(StringBuilder info)
@@ -304,14 +432,22 @@ namespace getway.DB.TelnetConnect
         /// </summary>
         /// <param name="cmd">指令</param>
         /// <param name="waitTime">等待超时时间（毫秒）</param>
-        public void Send(string cmd, int waitTime = 100)
+        public async Task Send(string cmd, int waitTime = 100, CancellationToken ct = new CancellationToken())
         {
-            if (Connected && ns.CanWrite)
+            await _syncLock.WaitAsync(ct);
+            try
             {
-                cmd += "\r\n";
-                byte[] buff = Encoding.ASCII.GetBytes(cmd);
-                ns.Write(buff, 0, buff.Length);
-                System.Threading.Thread.Sleep(waitTime);
+                if (Connected && ns.CanWrite)
+                {
+                    cmd += "\r\n";
+                    byte[] buff = Encoding.ASCII.GetBytes(cmd);
+                    ns.Write(buff, 0, buff.Length);
+                    System.Threading.Thread.Sleep(waitTime);
+                }
+            }
+            finally
+            {
+                _syncLock.Release();
             }
         }
 
@@ -367,7 +503,27 @@ namespace getway.DB.TelnetConnect
         {
             if (Client != null)
             {
-                Client.Close();
+                Client?.Close();
+                ns?.Close();
+                IsConnected = false;
+                Client = null;
+                ns = null;
+            }
+        }
+
+        /// <summary>
+        /// 当前连接需要长时间等待返回，设置繁忙
+        /// </summary>
+        /// <param name="status"></param>
+        public void UpdateTake(int status)
+        {
+            if (status == 0)
+            {
+                IsTake = false;
+            }
+            else if (status == 1)
+            {
+                IsTake = true;
             }
         }
 

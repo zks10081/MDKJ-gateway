@@ -9,8 +9,8 @@
     Height="240"
     MinWidth="300"
     MaxWidth="620"
-    SizeToContent="Width"
     ResizeMode="NoResize"
+    SizeToContent="Width"
     WindowStartupLocation="CenterScreen"
     WindowStyle="None"
     mc:Ignorable="d">
@@ -21,15 +21,17 @@
             CornerRadius="0"
             GlassFrameThickness="0"
             NonClientFrameEdges="None"
-            ResizeBorderThickness="0"
+            ResizeBorderThickness="1"
             UseAeroCaptionButtons="False" />
     </WindowChrome.WindowChrome>
+
     <Window.Background>
         <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
             <GradientStop Offset="0" Color="#072748" />
             <GradientStop Offset="0.5" Color="#0c3e6e" />
         </LinearGradientBrush>
     </Window.Background>
+
     <Window.Resources>
         <SolidColorBrush x:Key="FieldBorder" Color="#2C7BB5" />
         <SolidColorBrush x:Key="FieldBackground" Color="#0E3F68" />
@@ -151,93 +153,95 @@
             </Setter>
         </Style>
     </Window.Resources>
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="32" />
-            <RowDefinition Height="1*" />
-            <RowDefinition Height="3*" />
-        </Grid.RowDefinitions>
-        <!--  标题栏  -->
-        <Grid Grid.Row="0" Background="#002F54">
-            <TextBlock
-                Margin="12,0"
-                VerticalAlignment="Center"
-                FontSize="12"
-                Foreground="{StaticResource SecondaryText}"
-                Text="提示弹窗" />
-        </Grid>
-
-        <Grid
-            Grid.Row="1"
-            Width="auto"
-            VerticalAlignment="Center">
-            <StackPanel HorizontalAlignment="Left">
-                <TextBlock
-                    Margin="30,0,0,0"
-                    HorizontalAlignment="Center"
-                    FontSize="24"
-                    Style="{StaticResource FieldLabelStyle}"
-                    Text="{Binding MsgTitle}" />
-
-            </StackPanel>
-        </Grid>
-
-        <Grid Grid.Row="2">
+    <Border BorderBrush="#2D7FF9" BorderThickness="2">
+        <Grid>
             <Grid.RowDefinitions>
-                <RowDefinition Height="2*" />
+                <RowDefinition Height="32" />
                 <RowDefinition Height="1*" />
-
+                <RowDefinition Height="3*" />
             </Grid.RowDefinitions>
-            <Border
-                Grid.Row="0"
-                Margin="5"
-                HorizontalAlignment="Stretch"
-                BorderBrush="LightGray"
-                BorderThickness="2"
-                CornerRadius="5">
-                <StackPanel
-                    HorizontalAlignment="Center"
+            <!--  标题栏  -->
+            <Grid Grid.Row="0" Background="#002F54">
+                <TextBlock
+                    Margin="12,0"
                     VerticalAlignment="Center"
-                    Orientation="Horizontal">
+                    FontSize="12"
+                    Foreground="{StaticResource SecondaryText}"
+                    Text="提示弹窗" />
+            </Grid>
+
+            <Grid
+                Grid.Row="1"
+                Width="auto"
+                VerticalAlignment="Center">
+                <StackPanel HorizontalAlignment="Left">
                     <TextBlock
-                        Margin="0,2,5,0"
-                        FontFamily="{StaticResource iconfont}"
+                        Margin="10,0,0,0"
+                        HorizontalAlignment="Center"
                         FontSize="24"
-                        Foreground="{Binding IconColor}"
-                        Text="{Binding IconText}" />
-                    <TextBlock
-                        MaxWidth="420"
-                        Margin="0,6,0,0"
-                        FontSize="14"
-                        Foreground="White"
-                        Text="{Binding Info}"
-                        TextWrapping="Wrap" />
-                </StackPanel>
-            </Border>
-            <Grid Grid.Row="1">
-                <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
-                    <Button
-                        Width="80"
-                        Height="30"
-                        Margin="5,0"
-                        Background="Orange"
-                        Click="OkButton_Click"
-                        Content="确定"
-                        Style="{StaticResource ButtonStyle}"
-                        Visibility="{Binding OkShow}" />
-                    <Button
-                        Width="80"
-                        Height="30"
-                        Margin="5,0"
-                        Background="LightGray"
-                        Click="CancelButton_Click"
-                        Content="取消"
-                        Style="{StaticResource ButtonStyle}"
-                        Visibility="{Binding CanclShow}" />
+                        Style="{StaticResource FieldLabelStyle}"
+                        Text="{Binding MsgTitle}" />
+
                 </StackPanel>
             </Grid>
 
-        </Grid>
+            <Grid Grid.Row="2">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="2*" />
+                    <RowDefinition Height="1*" />
 
-    </Grid>
+                </Grid.RowDefinitions>
+                <Border
+                    Grid.Row="0"
+                    Margin="5"
+                    HorizontalAlignment="Stretch"
+                    BorderBrush="LightGray"
+                    BorderThickness="0,2"
+                    CornerRadius="0">
+                    <StackPanel
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Orientation="Horizontal">
+                        <TextBlock
+                            Margin="0,2,15,0"
+                            FontFamily="{StaticResource iconfont}"
+                            FontSize="24"
+                            Foreground="{Binding IconColor}"
+                            Text="{Binding IconText}" />
+                        <TextBlock
+                            MaxWidth="420"
+                            Margin="0,6,0,0"
+                            FontSize="14"
+                            Foreground="White"
+                            Text="{Binding Info}"
+                            TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+                <Grid Grid.Row="1">
+                    <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
+                        <Button
+                            Width="80"
+                            Height="30"
+                            Margin="5,0"
+                            Background="Orange"
+                            Click="OkButton_Click"
+                            Content="确定"
+                            Style="{StaticResource ButtonStyle}"
+                            Visibility="{Binding OkShow}" />
+                        <Button
+                            Width="80"
+                            Height="30"
+                            Margin="5,0"
+                            Background="LightGray"
+                            Click="CancelButton_Click"
+                            Content="取消"
+                            Style="{StaticResource ButtonStyle}"
+                            Visibility="{Binding CanclShow}" />
+                    </StackPanel>
+                </Grid>
+
+            </Grid>
+
+        </Grid>
+    </Border>
 </Window>

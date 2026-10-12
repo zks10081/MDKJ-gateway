@@ -18,9 +18,11 @@ namespace getway.ViewModel
         private string _StartPhonet;
         private string _ExcludePhone;
         private string _ActionContent;
+        private bool _IsEdit = true;
         public string StartPhone { get => _StartPhonet; set => SetProperty(ref _StartPhonet, value); }
         public string ExcludePhone { get => _ExcludePhone; set => SetProperty(ref _ExcludePhone, value); }
         public string ActionContent { get => _ActionContent; set => SetProperty(ref _ActionContent, value); }
+        public bool IsEdit { get => _IsEdit; set => SetProperty(ref _IsEdit, value); }
 
         public ILogSink _logSink;
         private void Log(string text) => _logSink?.AppendLog(text);
@@ -66,6 +68,7 @@ namespace getway.ViewModel
             string boardName = BoardId;
             string result = string.Empty;
             List<int> UserList = new List<int>();
+            if (string.IsNullOrEmpty(ExcludePhone)) ExcludePhone = "99999";
             ExcludePhone = ExcludePhone.Replace("，", ",");
             List<string> ExcludeList = ExcludePhone.Split(",").ToList();
             List<string> CommandList = new List<string>();
@@ -78,6 +81,7 @@ namespace getway.ViewModel
             int addCount = 0;
             string starFlagNo = count.ToString();//起始标记
             string starFlagName = index.ToString();//起始标记
+            IsEdit = false;
             ActionContent = $"正在处理数据。。。";
 
             int last_index = 0;
@@ -136,6 +140,8 @@ namespace getway.ViewModel
                 index++;
             }
 
+            //连接状态设为占用
+            TcpConnect.UpdateTake(key, 1);
 
             ActionContent = $"正在初始化用户数据。。。";
             QuerySipUserDataSwitch("close");
@@ -145,6 +151,8 @@ namespace getway.ViewModel
             if (!deletflag)
             {
                 MessageView.ShowWaring("初始化用户数据超时，请重试！");
+                TcpConnect.UpdateTake(key, 0);
+                IsEdit = true;
                 return;
             }
 
@@ -183,53 +191,65 @@ namespace getway.ViewModel
             {
                 QuerySipUserDataSwitch("open");
                 CloseWindows(param);
+                MessageView.ShowSuccess("批量修改用户成功！");
+                Log($"批量修改用户成功！");
             }
+
+            TcpConnect.UpdateTake(key, 0);
+            IsEdit = true;
             string log = ReadCache.ToString();
             Debug.WriteLine($"日志打印：{log}");
 
         });
 
-        public async Task<bool> SipUserDelete(string key, StringBuilder read, int TotalTimeoutMs = 40000)
+        public async Task<bool> SipUserDelete(string key, StringBuilder read, int TotalTimeoutMs = 60000)
         {
-            bool isuccess = false;
+            bool isuccess = true;
             await Task.Run(async () =>
             {
                 try
                 {
-                    //计时
-                    var sw = Stopwatch.StartNew();
-                    //执行命令前，清空读取内容
-                    string result = TcpConnect.Receive(key);
-                    //删除sip用户
-                    TelnetEvent.SipUserDeleteAll(key, "0", "1");
-
-                    int emptyCount = 0;
-                    while (true && sw.ElapsedMilliseconds < TotalTimeoutMs)
+                    for (int i = 0; i < 4; i++)
                     {
-                        result = TcpConnect.Receive(key);
-                        read.AppendLine($"时间：{DateTime.Now:HH:mm:ss.fff}，内容：\r{result}");
-                        Debug.WriteLine($"耗时：{sw.ElapsedMilliseconds}ms，删除sip结果：{result}");
+                        int start = DefaulConfig.SipUserDeletFlag[i] + 1;
+                        int end = DefaulConfig.SipUserDeletFlag[i + 1];
 
-                        if (result.Contains("Username or Domain invalid") || result.Contains("System is busy"))
+                        //计时
+                        var sw = Stopwatch.StartNew();
+                        //执行命令前，清空读取内容
+                        string result = TcpConnect.Receive(key);
+                        //删除sip用户
+                        TelnetEvent.SipUserDeleteAll(key, "0", "1", start, end);
+
+                        int emptyCount = 0;
+                        while (true && sw.ElapsedMilliseconds < TotalTimeoutMs)
                         {
-                            System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                            result = TcpConnect.Receive(key);
+                            read.AppendLine($"时间：{DateTime.Now:HH:mm:ss.fff}，内容：\r{result}");
+                            Debug.WriteLine($"耗时：{sw.ElapsedMilliseconds}ms，删除sip结果：{result}");
+
+                            if (result.Contains("Username or Domain invalid") || result.Contains("System is busy"))
                             {
-                                MessageView.ShowWaring("有未完成的操作，请稍后再继续,删除方法");
-                            });
-                            return;
+                                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                                {
+                                    MessageView.ShowWaring("有未完成的操作，请稍后再继续,删除方法");
+                                });
+                                isuccess = false;
+                                return;
 
+                            }
+                            else if (result.Contains("Command processing is completed") || result.Contains("users has been deleted") || result.Contains("successfully"))
+                            {
+                                //删除成功
+                                Console.WriteLine("删除完成");
+                                Log($"删除完成！,耗时{sw.ElapsedMilliseconds}ms");
+                                break;
+                            }
+                            Thread.Sleep(300);
                         }
-                        else if (result.Contains("Command processing is completed") || result.Contains("users has been deleted") || result.Contains("successfully"))
-                        {
-                            //删除成功
-                            Console.WriteLine("删除完成");
-                            Log($"删除完成！,耗时{sw.ElapsedMilliseconds}ms");
-                            isuccess = true;
-                            break;
-                        }
-                        Thread.Sleep(300);
+
+                        if (!isuccess) break;
                     }
-
 
                     //重置权限
                     TelnetEvent.ResetPerm(key);
@@ -302,14 +322,20 @@ namespace getway.ViewModel
                             count++;
                             result = TcpConnect.Receive(key);
 
-                            Log($"执行命令{item}，第{count}次内容：{result}");
+                            if (DefaulConfig.IsDebug)
+                            {
+                                Log($"执行命令{item}，第{count}次内容：{result}");
+                            }
                             read.AppendLine($"时间：{DateTime.Now:HH:mm:ss.fff}，执行指令{item}，\r内容：\r{result}");
                             Debug.WriteLine($"执行命令{item}，结果：{result}");
 
                             if (result.Contains("Command processing is completed") || result.Contains("successfully"))
                             {
                                 addIndex = countList[index] > addIndex ? countList[index] : addIndex;
-                                Log($"执行成功！命令：{item},耗时{sw.ElapsedMilliseconds}ms");
+                                if (DefaulConfig.IsDebug)
+                                {
+                                    Log($"执行成功！命令：{item},耗时{sw.ElapsedMilliseconds}ms");
+                                }
                                 break;
                             }
                             else if (result.Contains("the telephone number has been occupied by another port"))

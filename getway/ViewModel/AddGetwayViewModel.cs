@@ -26,7 +26,8 @@ namespace getway.ViewModel
         {
             if (!ConfigUtil.IsIP(_GetwayIp) || String.IsNullOrEmpty(_GetwayIp))
             {
-                GetWayModel model = new GetWayModel();
+                MessageView.ShowWaring("IP  " + _GetwayIp + " 格式不正确");
+                return;
 
             }
             foreach (var item in _NowGatewayList)

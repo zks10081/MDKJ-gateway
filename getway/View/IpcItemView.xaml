@@ -138,6 +138,10 @@
                     <ItemsPanelTemplate>
                         <WrapPanel ItemHeight="112" ItemWidth="112" />
                     </ItemsPanelTemplate>
+
+                    <!--<ItemsPanelTemplate>
+                        <UniformGrid Columns="8" Rows="8" />
+                    </ItemsPanelTemplate>-->
                 </ItemsControl.ItemsPanel>
 
                 <ItemsControl.ItemTemplate>

@@ -125,7 +125,6 @@ namespace getway.DB.TelnetConnect
             Telnet2 telnet = TcpConnect.GetTelnet(key);
             string result = string.Empty;
 
-            telnet.Send("enable" + Environment.NewLine);
             telnet.Send("config" + Environment.NewLine);//进入config模式
             telnet.Send("esl user" + Environment.NewLine);//进入esl user模式
 
@@ -148,7 +147,6 @@ namespace getway.DB.TelnetConnect
             Telnet2 telnet = TcpConnect.GetTelnet(key);
             string result = string.Empty;
 
-            telnet.Send("enable");
             result = telnet.Receive();
             telnet.Send("config");//进入config模式
             result = telnet.Receive();
@@ -171,8 +169,6 @@ namespace getway.DB.TelnetConnect
         {
             Telnet2 telnet = TcpConnect.GetTelnet(key);
             string result = string.Empty;
-            telnet.Send("enable" + Environment.NewLine);
-            result = telnet.Receive();
             telnet.Send("config" + Environment.NewLine);//进入config模式
             result = telnet.Receive();
             telnet.Send("esl user" + Environment.NewLine);//进入esl user模式
@@ -195,8 +191,6 @@ namespace getway.DB.TelnetConnect
             Telnet2 telnet = TcpConnect.GetTelnet(key);
             string result = string.Empty;
 
-            telnet.Send("enable" + Environment.NewLine);
-            result = telnet.Receive();
             telnet.Send("config" + Environment.NewLine);//进入config模式
             result = telnet.Receive();
 
@@ -215,8 +209,6 @@ namespace getway.DB.TelnetConnect
             Telnet2 telnet = TcpConnect.GetTelnet(key);
             string result = string.Empty;
 
-            telnet.Send("enable" + Environment.NewLine);
-            result = telnet.Receive();
             telnet.Send("config" + Environment.NewLine);//进入config模式
             result = telnet.Receive();
 
@@ -235,8 +227,6 @@ namespace getway.DB.TelnetConnect
             Telnet2 telnet = TcpConnect.GetTelnet(key);
             string result = string.Empty;
 
-            telnet.Send("enable" + Environment.NewLine);
-            result = telnet.Receive();
             telnet.Send("config" + Environment.NewLine);//进入config模式
             result = telnet.Receive();
 
@@ -254,8 +244,6 @@ namespace getway.DB.TelnetConnect
             Telnet2 telnet = TcpConnect.GetTelnet(key);
             string result = string.Empty;
 
-            telnet.Send("enable" + Environment.NewLine);
-            result = telnet.Receive();
             telnet.Send("config" + Environment.NewLine);//进入config模式
             result = telnet.Receive();
 
@@ -272,7 +260,6 @@ namespace getway.DB.TelnetConnect
             Telnet2 telnet = TcpConnect.GetTelnet(key);
             string result = string.Empty;
 
-            telnet.Send("enable" + Environment.NewLine);
             telnet.Send("config" + Environment.NewLine);//进入config模式
             result = telnet.Receive();
 
@@ -290,18 +277,30 @@ namespace getway.DB.TelnetConnect
         /// 删除全部SIP用户
         /// </summary>
         /// <param name="key"></param>
-        public static void SipUserDeleteAll(string key, string frameid, string slotid)
+        public static void SipUserDeleteAll(string key, string frameid, string slotid, int start, int end)
         {
             Telnet2 telnet = TcpConnect.GetTelnet(key);
             string result = string.Empty;
 
-            telnet.Send("enable" + Environment.NewLine);
             telnet.Send("config" + Environment.NewLine);//进入config模式
             telnet.Send("esl user" + Environment.NewLine);//进入esl user模式
             result = telnet.Receive();
 
-            telnet.Send($"sippstnuser batdel {frameid}/{slotid}/0 {frameid}/{slotid}/63" + Environment.NewLine + "y");
+            start = start < 0 ? 0 : start;
+            end = end > 63 ? 63 : end;
+            telnet.Send($"sippstnuser batdel {frameid}/{slotid}/{start} {frameid}/{slotid}/{end}" + Environment.NewLine + "y");
 
+        }
+
+        public static void SipUerCheckLine(string key, string fsp)
+        {
+            Telnet2 telnet = TcpConnect.GetTelnet(key);
+            string result = string.Empty;
+
+            telnet.Send("config" + Environment.NewLine);
+            telnet.Send("test" + Environment.NewLine);
+
+            telnet.Send($"pots loop-line-test {fsp} busy force" + Environment.NewLine);
         }
 
         /// <summary>
@@ -323,8 +322,6 @@ namespace getway.DB.TelnetConnect
             Telnet2 telnet = TcpConnect.GetTelnet(key);
             string result = string.Empty;
 
-            telnet.Send("enable" + Environment.NewLine);
-            result = telnet.Receive();
             telnet.Send("config" + Environment.NewLine);//进入config模式
             result = telnet.Receive();
 

@@ -15,13 +15,18 @@ namespace getway.ViewModel
     internal class EditSipUserViewModel : ViewModelBase
     {
         private string _FSP;
-        public string FSP { get => _FSP; set => SetProperty(ref _FSP, value); }
         private string _UserPhone;
-        public string UserPhone { get => _UserPhone; set => SetProperty(ref _UserPhone, value); }
         private string _HotLinePhone;
-        public string HotLinePhone { get => _HotLinePhone; set => SetProperty(ref _HotLinePhone, value); }
         private string _HotLineTime;
+        private string _ActionContent;
+        private bool _IsEdit = true;
+        public string FSP { get => _FSP; set => SetProperty(ref _FSP, value); }
+        public string UserPhone { get => _UserPhone; set => SetProperty(ref _UserPhone, value); }
+        public string HotLinePhone { get => _HotLinePhone; set => SetProperty(ref _HotLinePhone, value); }
         public string HotLineTime { get => _HotLineTime; set => SetProperty(ref _HotLineTime, value); }
+        public string ActionContent { get => _ActionContent; set => SetProperty(ref _ActionContent, value); }
+        public bool IsEdit { get => _IsEdit; set => SetProperty(ref _IsEdit, value); }
+
 
         public ObservableCollection<IpcUserModel> IpcUserList;
 
@@ -29,6 +34,8 @@ namespace getway.ViewModel
         private string oldTelno;
         private string oldHotlineTime;
         private string oldHotLinePhone;
+
+        public CheckLineView checkLineView;
 
 
         private string key;
@@ -56,6 +63,9 @@ namespace getway.ViewModel
             //无变化则直接退出,或HotLinePhone的值特殊情况
             if (oldHotLinePhone == HotLinePhone && oldHotlineTime == HotLineTime && oldTelno == UserPhone) CloseWindows(param);
 
+            IsEdit = false;
+            ActionContent = "修改中，请稍等！";
+
             //修改用户号码
             if (oldTelno != UserPhone)
             {
@@ -65,6 +75,7 @@ namespace getway.ViewModel
                 {
                     UserPhone = oldTelno;
                     MessageView.ShowWaring("用户号码格式错误");
+                    initTip();
                     return;
                 }
 
@@ -87,6 +98,7 @@ namespace getway.ViewModel
 
                 if (!isSuccess)
                 {
+                    initTip();
                     return;
                 }
                 else
@@ -107,12 +119,14 @@ namespace getway.ViewModel
                 {
                     UserPhone = oldTelno;
                     MessageView.ShowWaring("热线号码格式错误");
+                    initTip();
                     return;
                 }
                 if (!ConfigUtil.IsHotTime(HotLineTime))
                 {
                     UserPhone = oldTelno;
                     MessageView.ShowWaring("请输入正确的热线时间，范围是 1-60 秒");
+                    initTip();
                     return;
                 }
 
@@ -134,6 +148,7 @@ namespace getway.ViewModel
 
                 if (!isSuccess)
                 {
+                    initTip();
                     return;
                 }
                 else
@@ -147,6 +162,7 @@ namespace getway.ViewModel
             }
             //更新数据库内信息
             HotLineDB.UpdateHotLine(FSP, DefaulConfig.GetwayIp, UserPhone, HotLineTime, HotLinePhone);
+            initTip();
             //成功则关闭窗口
             CloseWindows(param);
 
@@ -222,6 +238,18 @@ namespace getway.ViewModel
 
         }
 
+        public ICommand CheckLineCommand => new ViewModelCommand(async param =>
+        {
+            checkLineView = new CheckLineView(FSP, UserPhone);
+            checkLineView.ShowDialog();
+        });
+
+        public void initTip()
+        {
+            IsEdit = true;
+            ActionContent = string.Empty;
+        }
+
         // 取消按钮
         public ICommand Cancel => new ViewModelCommand(param =>
         {
@@ -234,16 +262,6 @@ namespace getway.ViewModel
             window.Close();
         }
 
-        /// <summary>
-        /// 线路检测
-        /// </summary>
-        public ICommand CheckLineCommand => new ViewModelCommand(param =>
-        {
-            Window window = (Window)param;
-            window.Close();
-
-            //new CheckLineView(IP, FSP, Telno).ShowDialog();
-        });
 
         public IpcUserModel getIpcUser(string phoneNum)
         {

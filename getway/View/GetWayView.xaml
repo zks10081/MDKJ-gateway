@@ -390,12 +390,14 @@
                     ClipToBounds="True"
                     Style="{StaticResource PanelBody}">
                     <ListBox
+                        x:Name="GetwayListBox"
                         d:ItemsSource="{d:SampleData ItemCount=5}"
                         Background="Transparent"
                         BorderThickness="0"
                         ItemContainerStyle="{StaticResource GatewayItemStyle}"
                         ItemsSource="{Binding GetWayList}"
                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                        SelectedItem="{Binding SelectedItem}"
                         SelectedValue="{Binding GetWayIp}"
                         SelectedValuePath="IP">
                         <ListBox.ItemTemplate>
@@ -499,6 +501,12 @@
                         </StackPanel>
                     </Border>
                     <Button
+                        Command="{Binding RefreshGetwayCommand}"
+                        Content="刷新网关"
+                        Style="{StaticResource ButtonStyle}"
+                        Tag="&#xe619;"
+                        Visibility="{Binding GetwayShow}" />
+                    <Button
                         Command="{Binding AddGetwayCommand}"
                         Content="添加网关"
                         Style="{StaticResource ButtonStyle}"
@@ -522,6 +530,12 @@
                             <TextBlock Style="{StaticResource PanelHeaderText}" Text="用户操控" />
                         </StackPanel>
                     </Border>
+                    <Button
+                        Command="{Binding RefreshSipUserCommand}"
+                        Content="用户查询重连"
+                        Style="{StaticResource ButtonStyle}"
+                        Tag="&#xe619;"
+                        Visibility="{Binding BorderShow}" />
                     <Button
                         Command="{Binding BatchUpdateSipUserCommad}"
                         Content="批量修改用户"
@@ -570,8 +584,10 @@
                     ClipToBounds="True"
                     Style="{StaticResource PanelBody}">
                     <ScrollViewer
+                        x:Name="Readscroll"
                         Margin="6"
                         HorizontalScrollBarVisibility="Auto"
+                        ScrollChanged="ReadContent_ScrollChanged"
                         VerticalScrollBarVisibility="Auto">
                         <TextBlock
                             FontFamily="Consolas"

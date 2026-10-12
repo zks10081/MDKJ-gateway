@@ -32,7 +32,7 @@ namespace getway.DB.Pg
             string updateSql = "";
             if (int.Parse(dataTable.Rows[0]["count"].ToString()) > 0)
             {
-                updateSql = $"update dm_gateway_hotline set number = '{number}',set hottime = '{hottime}',set hotnum = '{hotnum}' where ip = '{ip}' and fsp = '{fsp}'; ";
+                updateSql = $"update dm_gateway_hotline set number = '{number}', hottime = '{hottime}', hotnum = '{hotnum}' where ip = '{ip}' and fsp = '{fsp}'; ";
             }
             else
             {

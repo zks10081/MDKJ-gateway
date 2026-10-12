@@ -54,6 +54,20 @@ namespace getway.View
             }
         }
 
+        //命令回显自动滚动
+        public void ReadContent_ScrollChanged(object sender, ScrollChangedEventArgs e)
+        {
+            double verticalOffset = e.VerticalOffset;//滚动位置
+            double extentHeight = e.ExtentHeight;//内容总高度
+            double viewportHeight = e.ViewportHeight;//可视内容高度
+            double scrollableHeight = extentHeight - viewportHeight;
+            if (scrollableHeight >= verticalOffset + 10)
+            {
+                Readscroll.ScrollToVerticalOffset(scrollableHeight);
+            }
+
+        }
+
         /// <summary>
         /// 关闭
         /// </summary>

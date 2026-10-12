@@ -15,7 +15,7 @@ namespace getway.Util
         }
 
         //telnet参数配置
-        public static string Success_Flag = "dmkj>";//登录成功索引
+        public static string Success_Flag = "dmkj#";//登录成功索引
         public static int Telnet_waitTime = 300;
         public static string DigitMapName = "zjdm";//拨号规则名称
         public static int FrameId = 0;      //
@@ -89,7 +89,8 @@ namespace getway.Util
             {"3",SIPUserBackgroundColorOfCalling},
             {"4",SIPUserBackgroundColorOfLocked},
             {"5",SIPUserBackgroundColorOfIdle},
-            {"0",SIPUserBackgroundColorOfUnOnline}
+            {"0",SIPUserBackgroundColorOfUnOnline},
+            {"-1",SIPUserBackgroundColorOfUnOnline}
         };
 
         public static Dictionary<string, string> Dic_QueryStatus = new Dictionary<string, string>()
@@ -100,6 +101,8 @@ namespace getway.Util
             {"3","加载成功" },
             {"4","连接超时" },
         };
+
+        public static List<int> SipUserDeletFlag = new List<int> { -1, 15, 31, 47, 63 };
 
 
 

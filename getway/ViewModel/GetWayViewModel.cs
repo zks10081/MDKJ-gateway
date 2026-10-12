@@ -20,7 +20,9 @@ namespace getway.ViewModel
         private const int QueryTimeoutMs = 15000;
 
         private ObservableCollection<GetWayModel> _GetWayList = new ObservableCollection<GetWayModel>();
+        private GetWayModel _GetWayItem;
         public ObservableCollection<GetWayModel> GetWayList { get => _GetWayList; set => SetProperty(ref _GetWayList, value); }
+        public GetWayModel GetWayItem { get => _GetWayItem; set => SetProperty(ref _GetWayItem, value); }
 
         public AsyncRelayCommand AddConnectCommand { get; set; }
         public ICommand QueryBoardCommand { get; set; }
@@ -30,8 +32,11 @@ namespace getway.ViewModel
 
         public ICommand AddGetwayCommand { get; set; }//添加网关
         public ICommand DeleteGetwayCommand { get; set; }//删除网关
+        public ICommand RefreshGetwayCommand { get; set; }//删除网关
+
         public ICommand bohaoCommand { get; set; }//拨号
         public ICommand BatchUpdateSipUserCommad { get; set; }
+        public ICommand RefreshSipUserCommand { get; set; }
         public ICommand DigitMapCommand { get; set; }
         public ICommand SaveConfigCommand { get; set; }
 
@@ -100,6 +105,7 @@ namespace getway.ViewModel
                 if (SetProperty(ref _GetWayIp, value) && !string.IsNullOrEmpty(value))
                 {
                     DefaulConfig.GetwayIp = value;
+                    GetWayItem = GetIpModel(value);
                     _ = SwitchGetWayAsync(value);
                 }
             }
@@ -124,7 +130,9 @@ namespace getway.ViewModel
             ResetPermCommand = new AsyncRelayCommand(ResetPerm);
 
             AddGetwayCommand = new Command(AddGetway);
+            RefreshGetwayCommand = new ViewModelCommand(RefreshGetway);
             DeleteGetwayCommand = new Command(DeleteGetway);
+            RefreshSipUserCommand = new ViewModelCommand(RefreshSipUser);
             BatchUpdateSipUserCommad = new ViewModelCommand(BatchUpdateSipUser);
             DigitMapCommand = new ViewModelCommand(DigitMap);
             SaveConfigCommand = new ViewModelCommand(SaveConfig); ;
@@ -201,6 +209,7 @@ namespace getway.ViewModel
         {
             _switchCts?.Cancel();
             _switchCts?.Dispose();
+
             var cts = new CancellationTokenSource();
             _switchCts = cts;
 
@@ -221,7 +230,7 @@ namespace getway.ViewModel
                 InitShow();
                 GetwayShow = "Visible";
 
-                var connectTask = Task.Run(() => TcpConnect.AddTelnet(key, ip, "root", "mduadmin"));
+                var connectTask = Task.Run(() => TcpConnect.AddTelnet(key, ip, DefaulConfig.BaseUsername, DefaulConfig.BasePassword, true));
                 if (await Task.WhenAny(connectTask, Task.Delay(ConnectTimeoutMs)) != connectTask)
                 {
                     if (!cts.IsCancellationRequested) AppendLog($"网关 {ip} 连接超时");
@@ -250,7 +259,6 @@ namespace getway.ViewModel
                 if (cts.IsCancellationRequested) return;
 
                 AppendLog($"网关 {ip} 已连接：板卡 {IpcItemVM.BorderList.Count} 个，SIP 用户 {IpcItemVM.IpcUserList.Count} 个");
-                QueryStatusFun(1, "板卡未激活");
             }
             catch (Exception ex)
             {
@@ -344,6 +352,14 @@ namespace getway.ViewModel
 
         }
 
+        public void RefreshGetway(object paramter)
+        {
+            string temp_ip = GetWayIp;
+            GetWayIp = "";
+            InitAsync();
+            GetWayIp = temp_ip;
+        }
+
         public void DeleteGetway(object paramter)
         {
             if (string.IsNullOrEmpty(GetWayIp))
@@ -358,14 +374,13 @@ namespace getway.ViewModel
 
                 for (int i = 0; i < GetWayList.Count; i++)
                 {
-                    if (GetWayList[i].Equals(GetWayIp))
+                    if (GetWayList[i].IP.Equals(GetWayIp))
                     {
                         GetWayList.RemoveAt(i);
 
-
-
                         //删除对应ip的连接
                         TcpConnect.CloseTelnetByIp(GetWayIp);
+                        break;
                     }
                 }
 
@@ -374,8 +389,26 @@ namespace getway.ViewModel
 
         }
 
+        public GetWayModel GetIpModel(string ip)
+        {
+            foreach (GetWayModel model in GetWayList)
+            {
+                if (model.IP.Equals(GetWayIp))
+                {
+                    return model;
+                }
+            }
+            return null;
+        }
+
 
         //---------------------批量修改sip用户--------------------------
+
+        public void RefreshSipUser(object param)
+        {
+            IpcItemVM.InitFirst();
+            IpcItemVM.RefreshIpcAsync();
+        }
 
         public void BatchUpdateSipUser(object param)
         {

@@ -15,9 +15,9 @@ namespace getway.View
         public static Dictionary<Message_Type, String> _iconTextList = new Dictionary<Message_Type, string>()
         {
             {Message_Type.Message_Success,"\ue61c"},
-            {Message_Type.Message_Fail,"\ue616"},
+            {Message_Type.Message_Fail,"\ue618"},
             {Message_Type.Message_Waring,"\ue614"},
-            {Message_Type.Message_Info,"\ue626"},
+            {Message_Type.Message_Info,"\ue617"},
 
         };
         public static Dictionary<Message_Type, Brush> _iconColorList = new Dictionary<Message_Type, Brush>()
@@ -25,7 +25,7 @@ namespace getway.View
             {Message_Type.Message_Success,Brushes.Green},
             {Message_Type.Message_Fail,Brushes.Red},
             {Message_Type.Message_Waring,Brushes.Orange},
-            {Message_Type.Message_Info,Brushes.Blue},
+            {Message_Type.Message_Info,Brushes.White},
 
         };
 
@@ -50,7 +50,7 @@ namespace getway.View
         }
         public string Info { get => _Info; set => SetProperty(ref _Info, value); }
 
-        public string iconText { get => _iconText; set => SetProperty(ref _iconText, value); }
+        public string IconText { get => _iconText; set => SetProperty(ref _iconText, value); }
 
         public Brush IconColor { get => _iconColort; set => SetProperty(ref _iconColort, value); }
 
@@ -71,7 +71,7 @@ namespace getway.View
             model.MsgTitle = title;
             model.Info = message;
             model.Type = type;
-            model.iconText = _iconTextList[type];
+            model.IconText = _iconTextList[type];
             model.IconColor = _iconColorList[type];
             if (buttonShow > 0)
             {

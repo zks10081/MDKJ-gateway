@@ -229,7 +229,12 @@
                     </Border>
                 </StackPanel>
 
-                <TextBlock Margin="0,20,0,0" HorizontalAlignment="Center" FontSize="24" Foreground="White" Text="{Binding ActionContent}"/>
+                <TextBlock
+                    Margin="0,20,0,0"
+                    HorizontalAlignment="Center"
+                    FontSize="24"
+                    Foreground="White"
+                    Text="{Binding ActionContent}" />
 
             </StackPanel>
         </Grid>
@@ -244,6 +249,7 @@
                     Command="{Binding BatchUpdate}"
                     CommandParameter="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Window}}}"
                     Content="添加"
+                    IsEnabled="{Binding IsEdit}"
                     Style="{StaticResource LoginButtonStyle}" />
                 <Button
                     Width="100"
@@ -252,6 +258,7 @@
                     Command="{Binding Cancel}"
                     CommandParameter="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Window}}}"
                     Content="取消"
+                    IsEnabled="{Binding IsEdit}"
                     Style="{StaticResource LoginButtonStyle}" />
             </StackPanel>
 

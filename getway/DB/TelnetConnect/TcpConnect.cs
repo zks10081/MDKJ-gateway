@@ -18,10 +18,14 @@ namespace getway.DB.TelnetConnect
         /// <returns></returns>
         public static Telnet2? AddTelnet(String key, string host, string name, string password)
         {
+            return AddTelnet(key, host, name, password, false);
+        }
+        public static Telnet2? AddTelnet(String key, string host, string name, string password, bool isHeart)
+        {
             if (TelnetPool.ContainsKey(key))
             {
                 Telnet2 exist = TelnetPool[key];
-                if (exist != null && exist.Connected) return exist;
+                if (exist != null && exist.Connected && exist.IsConnected) return exist;
                 TelnetPool.Remove(key);
             }
 
@@ -104,6 +108,20 @@ namespace getway.DB.TelnetConnect
                 }
             }
         }
+
+        /// <summary>
+        /// 连接占用状态
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="status">1：占用，0：未占用</param>
+        public static void UpdateTake(String key, int status)
+        {
+            if (TelnetPool.ContainsKey(key))
+            {
+                TelnetPool[key].UpdateTake(status);
+            }
+        }
+
 
         /// <summary>
         /// 根据key删除对于telnet连接

@@ -93,6 +93,12 @@
                             Text="{Binding DigtiMapContent, UpdateSourceTrigger=PropertyChanged}" />
                     </Border>
                 </StackPanel>
+                <TextBlock
+                    Margin="0,20,0,0"
+                    HorizontalAlignment="Center"
+                    FontSize="24"
+                    Foreground="White"
+                    Text="{Binding ActionContent}" />
 
             </StackPanel>
         </Grid>
@@ -107,6 +113,7 @@
                     Command="{Binding UpdateInfo}"
                     CommandParameter="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Window}}}"
                     Content="修改"
+                    IsEnabled="{Binding IsEdit}"
                     Style="{StaticResource LoginButtonStyle}" />
                 <Button
                     Width="100"
@@ -115,6 +122,7 @@
                     Command="{Binding Cancel}"
                     CommandParameter="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Window}}}"
                     Content="取消"
+                    IsEnabled="{Binding IsEdit}"
                     Style="{StaticResource LoginButtonStyle}" />
             </StackPanel>
 

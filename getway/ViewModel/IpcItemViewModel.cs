@@ -158,12 +158,19 @@ namespace getway.ViewModel
             }
             if (_isBorder) return;
             _isBorder = true;
+
+            bool firstFlag = true;
+            if (_isFirstQuery)
+            {
+                firstFlag = false;
+                QuerStatus(2, "板卡加载中");
+            }
             string ip = IP;
 
             Task.Run(async () =>
             {
-                string name = DefaulConfig.BaseUsername;
-                string password = DefaulConfig.BasePassword;
+                string name = DefaulConfig.QuerySIPUserCallStateUsername_2;
+                string password = DefaulConfig.QuerySIPUserCallStatePassword_2;
                 string key = ip + name;
 
                 if (TcpConnect.AddTelnet(ip + name, ip, name, password) == null)
@@ -174,7 +181,6 @@ namespace getway.ViewModel
                 }
 
                 Log($"开始查询板卡：{ip}");
-                bool firstFlag = true;
                 while (!_cts.Token.IsCancellationRequested && _isBorder)
                 {
                     try
@@ -190,11 +196,11 @@ namespace getway.ViewModel
                         result = TcpConnect.Receive(key);
                         TelnetEvent.BorderString(result, BorderList);
 
-                        //if (firstFlag)
-                        //{
-                        //    firstFlag = false;
-                        //    continue;
-                        //}
+                        if (!firstFlag)
+                        {
+                            firstFlag = true;
+                            QuerStatus(1, "板卡未激活");
+                        }
                         await Task.Delay(4000, _cts.Token);
                     }
                     catch (OperationCanceledException) { break; }
@@ -238,7 +244,8 @@ namespace getway.ViewModel
             bool isFirstCall = false;
             if (_isFirstQuery)
             {
-                QuerStatus(2, "加载中");
+                QuerStatus(2, "用户加载中");
+                TempSipUserInfo();
                 //起线程，检查加载完成
                 Task.Run(async () =>
                 {
@@ -277,6 +284,7 @@ namespace getway.ViewModel
                 _isSipUserRegStatus = true;
                 Task.Run(async () =>
                 {
+                    Log($"SIP 注册状态查询开始：{ip}");
                     string name = DefaulConfig.QuerySIPUserRegStateUsername;
                     string password = DefaulConfig.QuerySIPUserRegStatePassword;
                     string key = ip + name;
@@ -336,7 +344,7 @@ namespace getway.ViewModel
                             }
 
                             isFirstReg = true;
-                            Log($"SIP 注册状态查询成功：耗时{sw.ElapsedMilliseconds} ms");
+                            Log($"SIP 注册状态查询成功：耗时 {sw.ElapsedMilliseconds} ms");
                             //本次查询时间3s后，开始下一次查询
                             await Task.Run(() =>
                             {
@@ -354,7 +362,8 @@ namespace getway.ViewModel
                         catch (Exception ex)
                         {
                             string msg = ex.Message.Trim().Replace("\r\n", "").Replace("\n", "").Replace("\r", "").Replace("dmkj#", "");
-                            Log($"SIP 呼叫状态查询出错：{msg}");
+                            string cache = ReandCache.ToString();
+                            Log($"SIP 注册状态查询出错：{msg}");
                             _isSipUserReg = false;
                             break;
                         }
@@ -373,10 +382,12 @@ namespace getway.ViewModel
                 _isSipUserCallStatus = true;
                 Task.Run(async () =>
                 {
+                    Log($"SIP 呼叫状态查询开始：{ip}");
                     //获取配置信息
                     string name = DefaulConfig.QuerySIPUserCallStateUsername_1;
                     string password = DefaulConfig.QuerySIPUserCallStatePassword_1;
                     string key = ip + name;
+                    StringBuilder ReandCache = new StringBuilder();
                     //添加telnet连接
                     if (TcpConnect.AddTelnet(ip + name, ip, name, password) == null)
                     {
@@ -418,6 +429,7 @@ namespace getway.ViewModel
 
                                 emptyCount = 0;
                                 TelnetEvent.SipUserCallString(result, IpcUserList);
+                                ReandCache.AppendLine($"时间：{DateTime.Now:HH:mm:ss.fff}，内容：\r{result}");
                                 if (DefaulConfig.Debug_ShowTelnet)
                                 {
                                     Log($"呼叫状态回显（{sw.ElapsedMilliseconds} ms）：{result}");
@@ -449,6 +461,7 @@ namespace getway.ViewModel
                         catch (Exception ex)
                         {
                             string msg = ex.Message.Trim().Replace("\r\n", "").Replace("\n", "").Replace("\r", "").Replace("dmkj#", "");
+                            string cache = ReandCache.ToString();
                             Log($"SIP 呼叫状态查询出错：{msg}");
                             _isSipUserCall = false;
                             break;
