@@ -24,6 +24,24 @@ namespace getway.DB.Pg
             };
         }
 
+        public static Dictionary<string, string> QueryHotlineByIp(string ip, string border)
+        {
+            string querySql = $"select fsp,hottime,hotnum from dm_gateway_hotline where ip = '{ip}' and fsp like '0/{border}/%';";
+            DataTable dataTable = PgConnect.SelectAsync(querySql)
+                ?? throw new InvalidOperationException("数据库无响应，请检查网关地址与连接");
+            string hottime = "5";
+            string hotnum = "-";
+            Dictionary<string, string> dic = new Dictionary<string, string>();
+            foreach (DataRow item in dataTable.Rows)
+            {
+                dic.Add(item["fsp"].ToString(), item["hotnum"].ToString());
+            }
+            return dic;
+
+        }
+
+
+
         //更新热线信息
         public static void UpdateHotLine(string fsp, string ip, string number, string hottime, string hotnum)
         {

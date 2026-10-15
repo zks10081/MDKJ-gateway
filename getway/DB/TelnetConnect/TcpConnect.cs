@@ -1,4 +1,6 @@
-﻿using System.Net.Sockets;
+﻿using getway.Base;
+using getway.Util;
+using System.Net.Sockets;
 
 namespace getway.DB.TelnetConnect
 {
@@ -9,6 +11,8 @@ namespace getway.DB.TelnetConnect
         private static Dictionary<string, Dictionary<string, Object>> pool = new Dictionary<string, System.Collections.Generic.Dictionary<string, Object>>();
 
         private static Dictionary<string, Telnet2> TelnetPool = new Dictionary<string, Telnet2>();
+
+        public static LogTlenet log = new LogTlenet(DefaulConfig.TelnetLogPath, "telnet");
 
         /// <summary>
         /// 建立连接，并加入池内
@@ -29,11 +33,11 @@ namespace getway.DB.TelnetConnect
                 TelnetPool.Remove(key);
             }
 
-            Telnet2 telnet2 = new Telnet2();
-            telnet2.Connect(host, 23, name, password);
+            Telnet2 telnet2 = new Telnet2(log);
+            telnet2.Connect(host, 23, name, password, isHeart);
 
             // 登录失败不入池，返回 null 让调用方感知
-            if (!telnet2.isLogin)
+            if (!telnet2.IsConnected)
             {
                 telnet2.Close();
                 return null;
@@ -97,18 +101,6 @@ namespace getway.DB.TelnetConnect
                 TelnetPool[key].ClearReceiveBuffer();
             }
         }
-
-        public static void CloseTelnetByIp(string ip)
-        {
-            foreach (string key in TelnetPool.Keys)
-            {
-                if (key.Contains(ip))
-                {
-                    TelnetPool[key].Close();
-                }
-            }
-        }
-
         /// <summary>
         /// 连接占用状态
         /// </summary>
@@ -122,6 +114,19 @@ namespace getway.DB.TelnetConnect
             }
         }
 
+        public static void CloseTelnetByIp(string ip)
+        {
+            foreach (string key in TelnetPool.Keys.ToList())
+            {
+                if (key.Contains(ip))
+                {
+                    TelnetPool[key].Close();
+                    TelnetPool.Remove(key);
+                }
+            }
+        }
+
+
 
         /// <summary>
         /// 根据key删除对于telnet连接
@@ -129,19 +134,40 @@ namespace getway.DB.TelnetConnect
         /// <param name="key"></param>
         public static void CloseTenlet(string key)
         {
-            if (TelnetPool.ContainsKey(key)) TelnetPool[key].Close();
+            if (TelnetPool.ContainsKey(key))
+            {
+                TelnetPool[key].Close();
+                TelnetPool.Remove(key);
+            }
         }
 
         /// <summary>
         /// 删除连接池所有连接
         /// </summary>
         /// <param name="key"></param>
-        public static void CloseAll()
+        public static async Task CloseAll()
         {
             foreach (var item in TelnetPool.Keys)
             {
-                TelnetPool[item].Close();
+                if (TelnetPool[item].HeartbeatTaskStatus())
+                {
+                    await TelnetPool[item].DisposeAsync();
+                }
+                else
+                {
+                    TelnetPool[item].Close();
+                }
             }
+            TelnetPool.Clear();
+        }
+
+        public static void AppendLog(string key, string text)
+        {
+            if (TelnetPool.ContainsKey(key))
+            {
+                TelnetPool[key].AppendLog(text);
+            }
+
         }
 
 

@@ -88,6 +88,11 @@ namespace getway.ViewModel
                     while (true || sw.ElapsedMilliseconds < 5000)
                     {
                         result = TcpConnect.Receive(key);
+                        if (DefaulConfig.IsDebug)
+                        {
+                            Debug.WriteLine($"耗时：{sw.ElapsedMilliseconds}ms，Sip用户号码修改结果：{result}");
+                        }
+
 
                         isSuccess = checkReult(result);
 
@@ -104,6 +109,8 @@ namespace getway.ViewModel
                 else
                 {   //将变化同步至数组
                     getIpcUser(oldTelno).Name = UserPhone;
+                    //更新数据库内信息
+                    HotLineDB.UpdateHotLine(FSP, DefaulConfig.GetwayIp, UserPhone, oldHotlineTime, oldHotLinePhone);
                 }
 
                 TelnetEvent.ResetPerm(key);
@@ -114,13 +121,24 @@ namespace getway.ViewModel
             if (oldHotLinePhone != HotLinePhone || oldHotlineTime != HotLineTime)
             {
                 bool isSuccess = false;
+                int status = 0;
                 //校验格式
-                if (!ConfigUtil.IsPhoneNum(HotLinePhone) || HotLinePhone == "-")
+                if (!ConfigUtil.IsPhoneNum(HotLinePhone))
                 {
                     UserPhone = oldTelno;
                     MessageView.ShowWaring("热线号码格式错误");
                     initTip();
                     return;
+                }
+                //如果热线从其他变为0，关闭热线
+                if (HotLinePhone == "-")
+                {
+                    if (oldHotLinePhone == HotLinePhone)
+                    {
+                        initTip();
+                        return;
+                    }
+                    status = 1;
                 }
                 if (!ConfigUtil.IsHotTime(HotLineTime))
                 {
@@ -130,7 +148,7 @@ namespace getway.ViewModel
                     return;
                 }
 
-                TelnetEvent.EditHotLine(key, FSP, UserPhone, HotLinePhone, HotLineTime);
+                TelnetEvent.EditHotLine(key, FSP, UserPhone, HotLinePhone, HotLineTime, status == 0);
                 await Task.Run(() =>
                 {
                     //计时
@@ -138,6 +156,10 @@ namespace getway.ViewModel
                     while (true || sw.ElapsedMilliseconds < 5000)
                     {
                         result = TcpConnect.Receive(key);
+                        if (DefaulConfig.IsDebug)
+                        {
+                            Debug.WriteLine($"耗时：{sw.ElapsedMilliseconds}ms，热线修改结果：{result}");
+                        }
 
                         isSuccess = checkReult(result);
 
@@ -164,6 +186,7 @@ namespace getway.ViewModel
             HotLineDB.UpdateHotLine(FSP, DefaulConfig.GetwayIp, UserPhone, HotLineTime, HotLinePhone);
             initTip();
             //成功则关闭窗口
+            MessageView.ShowSuccess("修改成功！");
             CloseWindows(param);
 
         });

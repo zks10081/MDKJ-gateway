@@ -61,6 +61,10 @@ namespace getway.ViewModel
                 while (true && sw.ElapsedMilliseconds < 90000)
                 {
                     result = TcpConnect.Receive(key);
+                    if (DefaulConfig.IsDebug)
+                    {
+                        Debug.WriteLine($"时间：{DateTime.Now:HH:mm:ss.fff}，内容：{result}");
+                    }
                     readOnly.AppendLine(result);
                     if (result == null) break;
 
@@ -107,6 +111,9 @@ namespace getway.ViewModel
 
                     Thread.Sleep(200);
                 }
+
+                //重置权限
+                TelnetEvent.ResetPerm(key);
             });
 
             if (SaveStatus == 3)
@@ -120,7 +127,10 @@ namespace getway.ViewModel
 
             IsEdit = true;
             TcpConnect.UpdateTake(key, 0);
-            Debug.WriteLine($"时间：{DateTime.Now:HH:mm:ss.fff}，内容：{readOnly.ToString()}");
+            if (DefaulConfig.IsDebug)
+            {
+                Debug.WriteLine($"时间：{DateTime.Now:HH:mm:ss.fff}，内容：{readOnly.ToString()}");
+            }
 
         });
 

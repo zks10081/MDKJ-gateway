@@ -22,7 +22,7 @@ namespace getway.View
         /// </summary>
         private void CloseButton_Click(object sender, RoutedEventArgs e)
         {
-            Application.Current.Shutdown();
+            this.Close();
         }
         /// <summary>
         /// 输入框获得焦点时全选，方便直接改写

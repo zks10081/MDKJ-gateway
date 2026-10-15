@@ -5,8 +5,8 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="clr-namespace:getway.View"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    d:DesignHeight="744"
-    d:DesignWidth="936"
+    d:DesignHeight="699"
+    d:DesignWidth="996"
     mc:Ignorable="d">
 
     <UserControl.Resources>
@@ -136,7 +136,7 @@
                 ItemsSource="{Binding IpcUserList}">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
-                        <WrapPanel ItemHeight="112" ItemWidth="112" />
+                        <WrapPanel ItemHeight="{Binding DataContext.SipInfoSide, RelativeSource={RelativeSource AncestorType=ScrollViewer}}" ItemWidth="{Binding DataContext.SipInfoSide, RelativeSource={RelativeSource AncestorType=ScrollViewer}}" />
                     </ItemsPanelTemplate>
 
                     <!--<ItemsPanelTemplate>
@@ -152,8 +152,8 @@
                             Command="{Binding DataContext.EditchSipUserCommand, RelativeSource={RelativeSource AncestorType=ScrollViewer}}"
                             CommandParameter="{Binding Name}">
                             <Grid
-                                Width="104"
-                                Height="104"
+                                Width="{Binding DataContext.SipInfoSideMin, RelativeSource={RelativeSource AncestorType=ScrollViewer}}"
+                                Height="{Binding DataContext.SipInfoSideMin, RelativeSource={RelativeSource AncestorType=ScrollViewer}}"
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center">
                                 <Grid.RowDefinitions>

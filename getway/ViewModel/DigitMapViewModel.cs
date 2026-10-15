@@ -4,6 +4,7 @@ using getway.DB.Pg;
 using getway.DB.TelnetConnect;
 using getway.Util;
 using getway.View;
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Input;
 
@@ -65,9 +66,12 @@ namespace getway.ViewModel
             IsEdit = false;
             ActionContent = "修改中，请稍等！";
             string result = string.Empty;
+            bool issuccess = false;
+            bool otherFail = false;
 
             //清空拨号规则
             TelnetEvent.DigitMapDeletAll(key);
+
             TelnetEvent.ResetPerm(key);
 
             //添加新的拨号规则
@@ -75,15 +79,17 @@ namespace getway.ViewModel
 
             await Task.Run(() =>
             {
+                //计时
+                var sw = Stopwatch.StartNew();
                 int outCount = 0;
 
-                while (true)
+                while (true && sw.ElapsedMilliseconds < 5000)
                 {
                     result = TcpConnect.Receive(key);
-                    if (result == null) break;
-                    //超过3次则直接跳过
-                    if (outCount >= 3) break;
-
+                    if (DefaulConfig.IsDebug)
+                    {
+                        Debug.WriteLine($"耗时：{sw.ElapsedMilliseconds}ms，拨号计划修改：{result}");
+                    }
 
                     if (result.Contains("System is busy, please retry after a while"))
                     {
@@ -91,6 +97,7 @@ namespace getway.ViewModel
                         {
                             MessageView.ShowWaring("有未完成的操作，请稍后再继续");
                         });
+                        otherFail = true;
                         break;
                     }
                     else if (result.Contains("Username or Domain invalid"))
@@ -99,6 +106,7 @@ namespace getway.ViewModel
                         {
                             MessageView.ShowWaring("服务器异常，请重试");
                         });
+                        otherFail = true;
                         break;
                     }
                     else if (result.Contains("Failure: The new digitmap name conflict"))
@@ -107,6 +115,7 @@ namespace getway.ViewModel
                         {
                             MessageView.ShowFail("拨号计划已存在，请重新输入！");
                         });
+                        otherFail = true;
                         break;
                     }
                     else if (result.Contains("The digitmap value is invalid"))
@@ -115,30 +124,38 @@ namespace getway.ViewModel
                         {
                             MessageView.ShowFail("拨号计划不符合规则，请重新输入！");
                         });
+                        otherFail = true;
                         break;
                     }
-                    else if (result.Contains(" Command:"))
+                    else if (result.Contains("Command:"))
                     {
                         //保存成功
                         Console.WriteLine("修改拨号计划完成");
                         DigitMapDB.UpdateDigitMapByIp(DefaulConfig.GetwayIp, DigtiMapContent);//向数据库更新
+                        issuccess = true;
                         break;
 
                     }
-                    else
-                    {
-                        outCount++;
-                    }
+                    Thread.Sleep(300);
                 }
+                //权限复位
+                TelnetEvent.ResetPerm(key);
 
             });
 
 
-            //权限复位
-            TelnetEvent.ResetPerm(key);
             IsEdit = true;
-
-            CloseWindows(param);
+            ActionContent = string.Empty;
+            if (issuccess)
+            {
+                MessageView.ShowSuccess("修改成功！");
+                CloseWindows(param);
+            }
+            else
+            {
+                if (otherFail) MessageView.ShowWaring("修改拨号计划超时");
+                DigtiMapContent = old_DigtiMapContent;
+            }
 
         });
 

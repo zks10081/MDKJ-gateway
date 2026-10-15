@@ -42,21 +42,30 @@ namespace getway.View
         /// <param name="e"></param>
         public void ClickMaxWindowButton(object sender, RoutedEventArgs e)
         {
+            int SipInfoSide = 0;
             if (this.WindowState == WindowState.Maximized)
             {
                 this.WindowState = WindowState.Normal;
                 MainTitleTextBlock.FontSize = 48;
+                SipInfoSide = 98;
             }
             else
             {
                 this.WindowState = WindowState.Maximized;
                 MainTitleTextBlock.FontSize = 64;
+                SipInfoSide = 128;
+            }
+
+            if (DataContext is GetWayViewMode vm)
+            {
+                vm.SipInfoSide = SipInfoSide;
             }
         }
 
         //命令回显自动滚动
         public void ReadContent_ScrollChanged(object sender, ScrollChangedEventArgs e)
         {
+            if (Readscroll.Tag.ToString() == "1") return;
             double verticalOffset = e.VerticalOffset;//滚动位置
             double extentHeight = e.ExtentHeight;//内容总高度
             double viewportHeight = e.ViewportHeight;//可视内容高度

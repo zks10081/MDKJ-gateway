@@ -85,29 +85,9 @@ namespace getway.DB.TelnetConnect
             Telnet2 telnet = TcpConnect.GetTelnet(key);
             if (telnet == null) return;
 
-            string command = "quit";
-            int out_flag = 0;
-            do
-            {
-                telnet.Send(command + Environment.NewLine);
-                Thread.Sleep(200);
-                string result = telnet.Receive();
+            telnet.Send("quit\r\nquit\r\nquit\r\nquit" + Environment.NewLine);
 
-                if (result.EndsWith("dmkj#"))
-                {
-                    break;
-                }
-                if (result.Contains("(y/n)[n]"))//如果要退出连接，则终止
-                {
-                    telnet.Send("n" + Environment.NewLine);
-                }
-                if (out_flag > 4)//超过4次，就停止循环
-                {
-                    break;
-                }
-            }
-            while (true);
-
+            string result = telnet.Receive();
             telnet.ClearReceiveBuffer();
 
         }
@@ -161,11 +141,12 @@ namespace getway.DB.TelnetConnect
         /// 配置摘机热线
         /// </summary>
         /// <param name="key"></param>
-        /// <param name="boardport"></param>
+        /// <param name="fsp"></param>
         /// <param name="userphone"></param>
         /// <param name="hotlinephone"></param>
         /// <param name="hotlinetime"></param>
-        public static void EditHotLine(string key, string fsp, string userphone, string hotlinephone, string hotlinetime)
+        /// <param name="isopen">true:开启热线，false:关闭热线</param>
+        public static void EditHotLine(string key, string fsp, string userphone, string hotlinephone, string hotlinetime, bool isopen)
         {
             Telnet2 telnet = TcpConnect.GetTelnet(key);
             string result = string.Empty;
@@ -173,10 +154,14 @@ namespace getway.DB.TelnetConnect
             result = telnet.Receive();
             telnet.Send("esl user" + Environment.NewLine);//进入esl user模式
             result = telnet.Receive();
-            telnet.Send($"sippstnuser rightflag set {fsp} telno {userphone} hotline enable" + Environment.NewLine);
+            string status = isopen ? "enable" : "disable";
+            telnet.Send($"sippstnuser rightflag set {fsp} telno {userphone} hotline {status}" + Environment.NewLine);
             Thread.Sleep(300);
-            telnet.Send($"sippstnuser servicedata parameter set {fsp} telno {userphone} hottime {hotlinetime} hotlinenum {hotlinephone}" + Environment.NewLine);
-            Thread.Sleep(300);
+            if (isopen)
+            {
+                telnet.Send($"sippstnuser servicedata parameter set {fsp} telno {userphone} hottime {hotlinetime} hotlinenum {hotlinephone}" + Environment.NewLine);
+                Thread.Sleep(300);
+            }
 
         }
         //---------------------------拨号规则操控--------------------------
@@ -265,8 +250,6 @@ namespace getway.DB.TelnetConnect
 
             telnet.Send($"local-digitmap delete all" + Environment.NewLine + "y");
             result = telnet.Receive();
-            //telnet.Send($"y" + Environment.NewLine);
-            //result = telnet.Receive();
 
         }
 
@@ -428,6 +411,7 @@ namespace getway.DB.TelnetConnect
                 if (model.RegiteStatus == regState) continue;
 
                 model.Name = string.IsNullOrEmpty(name) ? null : name;
+                model.IsTemp = false;
                 model.RegiteStatus = string.IsNullOrEmpty(regState) ? null : regState;
                 model.FSP = fsp;
                 model.Index = index;
@@ -487,6 +471,7 @@ namespace getway.DB.TelnetConnect
                 if (model.CallStatus == CallState) continue;
 
                 model.Name = string.IsNullOrEmpty(name) ? null : name;
+                model.IsTemp = false;
                 model.CallStatus = string.IsNullOrEmpty(CallState) ? null : CallState;
                 model.FSP = fsp;
                 model.Index = index;

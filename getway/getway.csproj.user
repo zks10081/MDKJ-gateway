@@ -8,28 +8,16 @@
     <Compile Update="View\AddGetwayView.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Update="View\AlarmView.xaml.cs">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Update="View\BatchUpdateSIPUserView.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Update="View\CheckLineView.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Update="View\ConfigView.xaml.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Update="View\DeviceView.xaml.cs">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Update="View\DigitMapView.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Update="View\EditorSipUserView.xaml.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Update="View\FirstView.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Update="View\GetWayView.xaml.cs">
@@ -39,9 +27,6 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Update="View\SaveConfigView.xaml.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Update="View\TrendView.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>

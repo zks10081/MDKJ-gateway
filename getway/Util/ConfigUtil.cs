@@ -28,6 +28,14 @@ namespace getway.Util
             return new LoginModel(); // 如果没有配置文件，返回一个空对象
         }
 
+        //日志记录
+        // 保存配置
+        public static void LogInput(LoginModel config)
+        {
+            var json = JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true });
+            File.WriteAllText(DefaulConfig.ConfigPath, json);
+        }
+
         /// <summary>
         /// 判断字符串是不是点分十进制的IP地址
         /// </summary>

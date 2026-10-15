@@ -40,7 +40,7 @@ namespace getway.ViewModel
 
             IsEdit = false;
             ActionContent = "检测中.....";
-
+            TcpConnect.UpdateTake(key, 1);
             TelnetEvent.SipUerCheckLine(key, FSP);
             await Task.Run(() =>
             {
@@ -52,7 +52,10 @@ namespace getway.ViewModel
                     result = TcpConnect.Receive(key);
 
                     ReadCache.AppendLine($"时间：{DateTime.Now:HH:mm:ss.fff}，内容：\r{result}");
-                    Debug.WriteLine($"耗时：{sw.ElapsedMilliseconds}ms，删除sip结果：{result}");
+                    if (DefaulConfig.IsDebug)
+                    {
+                        Debug.WriteLine($"耗时：{sw.ElapsedMilliseconds}ms，{PhoneNum}线路检测：{result}");
+                    }
 
                     if (result.Contains("Line state")) isWait = true;
 
@@ -85,7 +88,6 @@ namespace getway.ViewModel
             }
             else if (result.Contains("R-C network") && result.Contains("Normal"))
             {
-                MessageView.Show("成功", $"{PhoneNum}电话线路正常", Message_Type.Message_Success);
                 status = 1;
             }
             else
@@ -94,13 +96,16 @@ namespace getway.ViewModel
             }
 
 
-            IsEdit = true;
             ActionContent = "";
+            TelnetEvent.ResetPerm(key);
+            TcpConnect.UpdateTake(key, 0);
+            IsEdit = true;
+
             if (status == 1)
             {
+                MessageView.Show("成功", $"{PhoneNum}电话线路正常", Message_Type.Message_Success);
                 CloseWindows(param);
             }
-
 
         });
 

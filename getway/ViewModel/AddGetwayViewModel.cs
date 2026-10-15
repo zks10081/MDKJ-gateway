@@ -51,6 +51,8 @@ namespace getway.ViewModel
             });
             _NowGatewayList.Add(mode);
 
+
+            MessageView.ShowSuccess("网关添加成功！");
             Window window = (Window)param;
             window.Close();
 

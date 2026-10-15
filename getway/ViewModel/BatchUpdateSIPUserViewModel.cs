@@ -186,19 +186,23 @@ namespace getway.ViewModel
                 }
             });
 
+            TcpConnect.UpdateTake(key, 0);
+            IsEdit = true;
+
             //如果成功，关闭窗口
             if (_IsAddSuccess == 1)
             {
-                QuerySipUserDataSwitch("open");
-                CloseWindows(param);
-                MessageView.ShowSuccess("批量修改用户成功！");
                 Log($"批量修改用户成功！");
+                QuerySipUserDataSwitch("open");
+                MessageView.ShowSuccess("批量修改用户成功！");
+                CloseWindows(param);
             }
 
-            TcpConnect.UpdateTake(key, 0);
-            IsEdit = true;
             string log = ReadCache.ToString();
-            Debug.WriteLine($"日志打印：{log}");
+            if (DefaulConfig.IsDebug)
+            {
+                Debug.WriteLine($"日志打印：{log}");
+            }
 
         });
 
@@ -226,7 +230,10 @@ namespace getway.ViewModel
                         {
                             result = TcpConnect.Receive(key);
                             read.AppendLine($"时间：{DateTime.Now:HH:mm:ss.fff}，内容：\r{result}");
-                            Debug.WriteLine($"耗时：{sw.ElapsedMilliseconds}ms，删除sip结果：{result}");
+                            if (DefaulConfig.IsDebug)
+                            {
+                                Debug.WriteLine($"耗时：{sw.ElapsedMilliseconds}ms，删除sip结果：{result}");
+                            }
 
                             if (result.Contains("Username or Domain invalid") || result.Contains("System is busy"))
                             {
@@ -327,7 +334,10 @@ namespace getway.ViewModel
                                 Log($"执行命令{item}，第{count}次内容：{result}");
                             }
                             read.AppendLine($"时间：{DateTime.Now:HH:mm:ss.fff}，执行指令{item}，\r内容：\r{result}");
-                            Debug.WriteLine($"执行命令{item}，结果：{result}");
+                            if (DefaulConfig.IsDebug)
+                            {
+                                Debug.WriteLine($"执行命令{item}，结果：{result}");
+                            }
 
                             if (result.Contains("Command processing is completed") || result.Contains("successfully"))
                             {
@@ -380,6 +390,7 @@ namespace getway.ViewModel
 
                 _IsAddSuccess = issunccess ? 1 : 2;
 
+                //重置权限
                 TelnetEvent.ResetPerm(key);
             });
 

@@ -1,4 +1,5 @@
-﻿using getway.Util;
+﻿using getway.Base;
+using getway.Util;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
@@ -11,6 +12,8 @@ namespace getway.DB.TelnetConnect
     {
         private TcpClient Client;
         private NetworkStream ns;
+        private StreamWriter writ;
+        private StreamReader read;
         public string _host { get; set; }
         public string _name { get; set; }
         public string _password { get; set; }
@@ -31,7 +34,12 @@ namespace getway.DB.TelnetConnect
         //是否有任务
         public bool IsTake = false;
 
-        public bool isLogin { get; private set; }
+        //日志
+        private LogTlenet Log;
+
+
+
+
 
         /// <summary>
         /// 登录输入用户名提示字符
@@ -60,6 +68,11 @@ namespace getway.DB.TelnetConnect
             get { return Client != null ? Client.Connected : false; }
         }
 
+        public Telnet2(LogTlenet log)
+        {
+            Log = log;
+        }
+
 
         /// <summary>
         /// 连接远端主机
@@ -82,8 +95,12 @@ namespace getway.DB.TelnetConnect
                 {
                     throw new TimeoutException($"连接 {hostname}:{port} 超时");
                 }
-
+                //启用低延迟
+                Client.NoDelay = true;
+                AppendLog($"连接已建立");
                 ns = Client.GetStream();
+                writ = new StreamWriter(ns);
+                read = new StreamReader(ns);
                 result = Negotiate();
             }
             catch (Exception e)
@@ -110,6 +127,7 @@ namespace getway.DB.TelnetConnect
         }
         public string Connect(string hostname, int port, string username, string password, bool isHeart, int waitTime = 300)
         {
+            AppendLog($"用户开始建立连接");
             string result = string.Empty;
             //未连通则先建立 TCP 连接并完成 telnet 协商（拿到 "User name:" 提示）
             if (!Connected)
@@ -133,10 +151,10 @@ namespace getway.DB.TelnetConnect
 
                     if (result.EndsWith(DefaulConfig.Success_Flag))
                     {
-                        isLogin = true;
                         Send("scroll 120", waitTime);
                         issuccess = true;
                         IsConnected = true;
+                        AppendLog($"用户已登录");
                     }
                     Thread.Sleep(200);
                 }
@@ -147,10 +165,11 @@ namespace getway.DB.TelnetConnect
                     result = "Logon Error";
                 }
                 else
-                {
-                    if (isHeart)
+                {   // 只在第一次连接时启动心跳
+                    if (isHeart && (_heartbeatTask == null || _heartbeatTask.IsCompleted))
                     {
                         // 启动后台保活线程
+                        AppendLog($"后台保活线程");
                         _heartbeatTask = HeartbeatLoopAsync(_heartbeatCts.Token);
                     }
                 }
@@ -201,19 +220,32 @@ namespace getway.DB.TelnetConnect
                 {
                     await Task.Delay(30_000, ct); // 每 30 秒保活一次
 
-                    if (!IsTake) continue;
-                    if (!IsConnected) continue;
+                    if (IsTake)
+                    {
+                        AppendLog($"连接被占用，保活线程暂停");
+                        continue;
+                    }
+                    if (!IsConnected)
+                    {
+                        AppendLog($"正在断线重连中");
+                        continue;
+                    }
 
                     bool alive = await CheckAliveAsync(ct);
                     if (!alive)
                     {
+                        AppendLog($"发现断线，尝试重连");
                         Close();
                         // 发现断线，尝试重连
                         await AttemptReconnectAsync(ct);
                     }
+                    AppendLog($"{_host}({_name}):连接正常");
                 }
                 catch (OperationCanceledException) { break; }
-                catch { /* 忽略非致命异常，继续下一个循环 */ }
+                catch
+                { // 重连失败或其他异常时，也断开连接，等待下一次心跳再处理
+                    Close();
+                }
             }
         }
 
@@ -225,8 +257,10 @@ namespace getway.DB.TelnetConnect
             int maxRetries = 10;
             int retryDelayMs = 5000;
 
+            AppendLog($"开始断线重连");
             for (int i = 0; i < maxRetries; i++)
             {
+                AppendLog($"第{i + 1}次断线重连....");
                 if (ct.IsCancellationRequested) return;
 
                 try
@@ -235,12 +269,14 @@ namespace getway.DB.TelnetConnect
                     Connect(_host, 23, _name, _password);
                     IsConnected = true;
                     // TODO: 在此处更新UI，提示“设备已重新连接成功”
+                    AppendLog($"第{i + 1}次断线重连：重连成功！");
                     return;
                 }
                 catch
                 {
                     IsConnected = false;
                     // TODO: 在此处更新UI，提示“正在尝试第 {i+1} 次重连...”
+                    AppendLog($"第{i + 1}次断线重连：重连失败！");
                     await Task.Delay(retryDelayMs, ct);
                 }
             }
@@ -354,6 +390,21 @@ namespace getway.DB.TelnetConnect
             }
 
             return result.ToString().Trim();
+        }
+
+        public void sendLine(String command)
+        {
+            if (!Client.Connected)
+            {
+                return;
+            }
+            writ.WriteLine(command);
+            writ.Flush();
+        }
+
+        public string readLine()
+        {
+            return read.ReadLine();
         }
 
         public string Receive2(int waitMs = 1500)
@@ -501,14 +552,21 @@ namespace getway.DB.TelnetConnect
         /// </summary>
         public void Close()
         {
-            if (Client != null)
-            {
-                Client?.Close();
-                ns?.Close();
-                IsConnected = false;
-                Client = null;
-                ns = null;
-            }
+            Client?.Close();
+            ns?.Close();
+            IsConnected = false;
+            Client = null;
+            ns = null;
+
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            _heartbeatCts.Cancel();
+            if (_heartbeatTask != null) await _heartbeatTask;
+            Close();
+            _syncLock.Dispose();
+            _heartbeatCts.Dispose();
         }
 
         /// <summary>
@@ -526,6 +584,8 @@ namespace getway.DB.TelnetConnect
                 IsTake = true;
             }
         }
+
+        public bool HeartbeatTaskStatus() { return _heartbeatTask == null; }
 
         /// <summary>
         /// 处理Telnet选项谈判，直到出现用户名输入提示
@@ -604,7 +664,15 @@ namespace getway.DB.TelnetConnect
             return result;
         }
 
+        public void AppendLog(string text)
+        {
+            text = $"时间：{DateTime.Now:yyyy:MM:dd HH:mm:ss fff}，IP：{_host}，用户：{_name},内容：{text}";
+            Log.AppendLog(text);
+        }
+
     }
 
-
 }
+
+
+

@@ -61,6 +61,7 @@ namespace getway.ViewModel
 
 
 
+
         // 日志缓冲：界面绑定的是 ReadContent 字符串，追加内容后必须主动通知刷新
         // 子 ViewModel 会从后台线程写日志，所以读写都要加锁
         private readonly StringBuilder _readContent = new StringBuilder();
@@ -74,29 +75,13 @@ namespace getway.ViewModel
             get { lock (_logLock) { return _readContent.ToString(); } }
         }
 
-        // ILogSink：子 ViewModel（IpcItemViewModel）也走这里写日志
-        public void AppendLog(string text)
-        {
-            lock (_logLock)
-            {
-                _readContent.AppendLine(text);
-                if (_readContent.Length > MaxLogLength)
-                {
-                    _readContent.Remove(0, _readContent.Length - MaxLogLength / 2);
-                }
-            }
-
-            // 后台线程触发的 PropertyChanged，WPF 绑定会自动封送到 UI 线程
-            OnPropertyChanged(nameof(ReadContent));
-        }
-
-
         // 子 ViewModel：由父 ViewModel 持有，在连接建立后再注入 key
         public IpcItemViewModel IpcItemVM { get; }
 
         private readonly Random _random = new Random();
 
         private string _GetWayIp = string.Empty;
+
         public string GetWayIp
         {
             get => _GetWayIp;
@@ -107,6 +92,20 @@ namespace getway.ViewModel
                     DefaulConfig.GetwayIp = value;
                     GetWayItem = GetIpModel(value);
                     _ = SwitchGetWayAsync(value);
+                }
+            }
+        }
+
+        private int _SipInfoSide;
+        public int SipInfoSide
+        {
+            get => _SipInfoSide;
+            set
+            {
+                if (SetProperty(ref _SipInfoSide, value))
+                {
+                    IpcItemVM.SipInfoSide = value;
+                    IpcItemVM.SipInfoSideMin = value - 8;
                 }
             }
         }
@@ -173,6 +172,21 @@ namespace getway.ViewModel
             }
             QueryStatusText = string.IsNullOrEmpty(tip) ? "网关未连接" : tip;
         }
+        // ILogSink：子 ViewModel（IpcItemViewModel）也走这里写日志
+        public void AppendLog(string text)
+        {
+            lock (_logLock)
+            {
+                _readContent.AppendLine(text);
+                if (_readContent.Length > MaxLogLength)
+                {
+                    _readContent.Remove(0, _readContent.Length - MaxLogLength / 2);
+                }
+            }
+
+            // 后台线程触发的 PropertyChanged，WPF 绑定会自动封送到 UI 线程
+            OnPropertyChanged(nameof(ReadContent));
+        }
 
         /// <summary>
         /// 加载网关列表
@@ -222,6 +236,7 @@ namespace getway.ViewModel
                 TcpConnect.CloseAll();
                 //终止所有查询
                 IpcItemVM.InitQueryTag();
+                IpcItemVM.InitFirst();//初始化状态回显
                 //板卡和sip都恢复默认状态
                 IpcItemVM.SelectBorder = null;
                 IpcItemVM.SelectFlag(null);
@@ -246,10 +261,9 @@ namespace getway.ViewModel
                     return;
                 }
 
+                IpcItemVM.SetIp(ip);
                 _currentKey = key;
                 DefaulConfig.Now_Telnet_key = key;
-                IpcItemVM.SetIp(ip);
-                IpcItemVM.InitFirst();//初始化状态回显
 
                 var refreshTask = IpcItemVM.RefreshAllAsync(cts.Token);
                 if (await Task.WhenAny(refreshTask, Task.Delay(QueryTimeoutMs)) == refreshTask)
@@ -292,6 +306,7 @@ namespace getway.ViewModel
             //IpcItemVM.RefreshIpcAsync();
             // 该方法内部有 Thread.Sleep 等待回显，放到线程池跑，不要把 UI 线程卡住
             await Task.Run(() => IpcItemVM.selectSipUserCallStatus());
+            //await Task.Run(() => IpcItemVM.SelectSipUserHotline());
         }
 
         //任意命令
@@ -371,15 +386,14 @@ namespace getway.ViewModel
             if (result)
             {
                 GetWayDB.DeleteOne(GetWayIp);
+                //删除对应ip的连接
+                TcpConnect.CloseTelnetByIp(GetWayIp);
 
                 for (int i = 0; i < GetWayList.Count; i++)
                 {
                     if (GetWayList[i].IP.Equals(GetWayIp))
                     {
                         GetWayList.RemoveAt(i);
-
-                        //删除对应ip的连接
-                        TcpConnect.CloseTelnetByIp(GetWayIp);
                         break;
                     }
                 }
@@ -460,7 +474,7 @@ namespace getway.ViewModel
 
         public void InitShow()
         {
-            DebugShow = "Collapsed";
+            DebugShow = DefaulConfig.IsDebug ? "Visible" : "Collapsed";
             GetwayShow = "Collapsed";
             BorderShow = "Collapsed";
         }

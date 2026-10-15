@@ -44,6 +44,8 @@ namespace getway.Model
 
         public int Index;
 
+        public bool IsTemp { get; set; } = true;
+
         //注册状态
         public string RegiteStatus;
 

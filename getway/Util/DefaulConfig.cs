@@ -21,6 +21,7 @@ namespace getway.Util
         public static int FrameId = 0;      //
         public static int MaxEmptyCount = 3;//读取空值次数阈值
         public static string MGID = "0";
+        public static int ConnectTimeoutSeconds = 15;
 
         //debug打印
         public static bool IsDebug = true;
@@ -41,6 +42,7 @@ namespace getway.Util
 
         // 配置文件保存在当前运行目录下
         public static string ConfigPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "config.json");
+        public static string TelnetLogPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "log");
 
 
         public static string Now_Telnet_key = "";
