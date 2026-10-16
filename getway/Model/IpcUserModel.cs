@@ -44,7 +44,10 @@ namespace getway.Model
 
         public int Index;
 
-        public bool IsTemp { get; set; } = true;
+        // 是否被设备真实回显过：界面用它控制是否可点，必须走 SetProperty，
+        // 否则值变了也不发 PropertyChanged，Button 的 IsEnabled 不会刷新
+        private bool _IsTemp = false;
+        public bool IsTemp { get => _IsTemp; set => SetProperty(ref _IsTemp, value); }
 
         //注册状态
         public string RegiteStatus;

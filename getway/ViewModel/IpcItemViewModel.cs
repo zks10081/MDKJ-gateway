@@ -89,6 +89,12 @@ namespace getway.ViewModel
         {
             if (SetProperty(ref _SelectBorder, border))
             {
+                //重置sip状态查询的线程标记
+                InitQueryTag();
+                //初始化回显
+                InitFirst();
+                //初始化临时信息
+                TempSipUserInfo();
                 if (border == null) return;
                 // 停掉上一块板卡的轮询循环，再按新的槽位重新拉数据
                 BoardNo = border?.SlotNo.ToString() ?? string.Empty;
@@ -97,12 +103,6 @@ namespace getway.ViewModel
                 //开启卡板显示
                 ChangBorderShow("open");
 
-                //重置sip状态查询的线程标记
-                InitQueryTag();
-                //初始化回显
-                InitFirst();
-                //初始化临时信息
-                TempSipUserInfo();
                 //初始状态为false，后续重复进入跳过
                 Log($"切换板卡：{BoardNo}");
                 if (_isSipQueryStatus)
@@ -133,6 +133,7 @@ namespace getway.ViewModel
 
         //由父 ViewModel调用方法
         public void SetIp(string ip) => IP = ip ?? string.Empty;
+        public void SetIsBorder(bool status) => _isBorder = status;
         public void InitFirst() => _isFirstQuery = true;
 
         //重查板卡与 SIP 用户
@@ -148,7 +149,6 @@ namespace getway.ViewModel
         /// </summary>
         public void InitQueryTag()
         {
-            _isBorder = false;
             _isSipUserReg = false;
             _isSipUserCall = false;
             _isSipUserHotline = false;
@@ -199,7 +199,7 @@ namespace getway.ViewModel
                         string result = TcpConnect.Receive(key);
 
                         //开始查询
-                        TelnetEvent.QueryBoard(key, 0);
+                        if (_isBorder) TelnetEvent.QueryBoard(key, 0);
                         await Task.Delay(1000, _cts.Token);
 
                         //处理查询结果
@@ -390,6 +390,7 @@ namespace getway.ViewModel
 
                     Log($"SIP 注册状态查询结束：{ip}");
                     _isSipUserRegStatus = false;
+                    TempSipUserInfo();
                 });
             }
 
@@ -491,6 +492,7 @@ namespace getway.ViewModel
 
                     Log($"SIP 呼叫状态查询结束：{ip}");
                     _isSipUserCallStatus = false;
+                    TempSipUserInfo();
                 });
             }
 
@@ -576,29 +578,25 @@ namespace getway.ViewModel
             }
 
             //10秒内，板卡没有切换，才进行后续查询
-            if (true)
+            int waitStatus = 0;
+            var hotTimging = Stopwatch.StartNew();
+            await Task.Run(() =>
             {
-                int waitStatus = 0;
-                var hotTimging = Stopwatch.StartNew();
-                await Task.Run(() =>
+                while (hotTimging.ElapsedMilliseconds < 10000)
                 {
-                    while (hotTimging.ElapsedMilliseconds < 10000)
+                    if (border != BoardNo)
                     {
-                        if (border != BoardNo)
-                        {
-                            waitStatus = 2;
-                            break;
-                        }
-
-                        Thread.Sleep(500);
+                        waitStatus = 2;
+                        break;
                     }
-                    if (waitStatus == 2)
-                    {
-                        return;
-                    }
-                });
 
-            }
+                    Thread.Sleep(500);
+                }
+                if (waitStatus == 2)
+                {
+                    return;
+                }
+            });
 
             HotLineQueryTask(border);
         }
@@ -630,7 +628,7 @@ namespace getway.ViewModel
                 foreach (IpcUserModel item in IpcUserList)
                 {
                     //临时数据，跳过
-                    if (item.IsTemp) continue;
+                    if (!item.IsTemp) continue;
                     try
                     {
                         //计时
@@ -771,7 +769,8 @@ namespace getway.ViewModel
             string border = string.IsNullOrEmpty(BoardNo) ? "1" : BoardNo;
             for (int i = 0; i < 64; i++)
             {
-                string status = _random.Next(6).ToString();
+                string status = _random.Next(2).ToString();
+
                 IpcUserList.Add(new IpcUserModel() { Name = Convert.ToString(8002 + i), Status = "0", FSP = $"0/{border}/{i}" });
             }
             string a = "";

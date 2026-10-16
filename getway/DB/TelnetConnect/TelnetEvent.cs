@@ -411,7 +411,7 @@ namespace getway.DB.TelnetConnect
                 if (model.RegiteStatus == regState) continue;
 
                 model.Name = string.IsNullOrEmpty(name) ? null : name;
-                model.IsTemp = false;
+                model.IsTemp = true;
                 model.RegiteStatus = string.IsNullOrEmpty(regState) ? null : regState;
                 model.FSP = fsp;
                 model.Index = index;
@@ -471,7 +471,7 @@ namespace getway.DB.TelnetConnect
                 if (model.CallStatus == CallState) continue;
 
                 model.Name = string.IsNullOrEmpty(name) ? null : name;
-                model.IsTemp = false;
+                model.IsTemp = true;
                 model.CallStatus = string.IsNullOrEmpty(CallState) ? null : CallState;
                 model.FSP = fsp;
                 model.Index = index;

@@ -10,6 +10,30 @@
     mc:Ignorable="d">
 
     <UserControl.Resources>
+        <Style x:Key="ItemButton" TargetType="ItemsControl">
+            <Style.Triggers>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Foreground" Value="Yellow" />
+                    <Setter Property="Background" Value="Transparent" />
+                    <Setter Property="Cursor" Value="No" />
+                    <Setter Property="Opacity" Value="0.6" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <!--
+            SIP 卡片宿主按钮：只负责点击区域，自己不画任何外观。
+            用默认模板的话，鼠标悬停时模板会画自己的浅蓝高亮框，盖在卡片上而且改不了颜色
+        -->
+        <Style x:Key="IpcCardHost" TargetType="Button">
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <ContentPresenter />
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
         <!--  状态胶囊：背景画在 Border 上，才会真正显示成色块  -->
         <!--  配色原则：底色饱和、文字按底色明度切换深/浅，保证任何状态下都清晰  -->
         <!--  状态色与 DefaulConfig 中的 SIPUserBackgroundColorOf* 一一对应  -->
@@ -66,6 +90,14 @@
                                 <Setter TargetName="StatusText" Property="Foreground" Value="White" />
                                 <Setter TargetName="StatusText" Property="Text" Value="● 空闲" />
                             </DataTrigger>
+
+                            <!--  整项被禁用（还没拿到设备回显）：胶囊改成灰底"未获取"，白边去掉  -->
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="StatusBorder" Property="Background" Value="#33414D" />
+                                <Setter TargetName="StatusBorder" Property="BorderBrush" Value="Transparent" />
+                                <Setter TargetName="StatusText" Property="Foreground" Value="#94A3B0" />
+                                <Setter TargetName="StatusText" Property="Text" Value="● 未获取" />
+                            </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
@@ -143,15 +175,18 @@
                         <UniformGrid Columns="8" Rows="8" />
                     </ItemsPanelTemplate>-->
                 </ItemsControl.ItemsPanel>
-
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
                         <Button
+                            x:Name="PART_Item"
                             Background="Transparent"
                             BorderBrush="Transparent"
                             Command="{Binding DataContext.EditchSipUserCommand, RelativeSource={RelativeSource AncestorType=ScrollViewer}}"
-                            CommandParameter="{Binding Name}">
+                            CommandParameter="{Binding Name}"
+                            IsEnabled="{Binding IsTemp}"
+                            Style="{StaticResource IpcCardHost}">
                             <Grid
+                                x:Name="PART_Root"
                                 Width="{Binding DataContext.SipInfoSideMin, RelativeSource={RelativeSource AncestorType=ScrollViewer}}"
                                 Height="{Binding DataContext.SipInfoSideMin, RelativeSource={RelativeSource AncestorType=ScrollViewer}}"
                                 HorizontalAlignment="Center"
@@ -163,38 +198,92 @@
                                 </Grid.RowDefinitions>
 
                                 <Border
+                                    x:Name="PART_Bg"
                                     Grid.RowSpan="3"
-                                    Background="#14496F"
-                                    BorderBrush="#2C7BB5"
-                                    BorderThickness="1"
-                                    CornerRadius="5" />
+                                    CornerRadius="5">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Background" Value="#14496F" />
+                                            <Setter Property="BorderBrush" Value="#2C7BB5" />
+                                            <Setter Property="BorderThickness" Value="1" />
+                                            <Style.Triggers>
+                                                <!--  悬停 / 选中高亮：边框换成红色（原来由默认模板画的浅蓝框已随模板去掉）  -->
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="BorderBrush" Value="#b8e0f8" />
+                                                    <Setter Property="BorderThickness" Value="5" />
+                                                </Trigger>
+                                                <!--  禁用（还没拿到回显）：底色压深，边框直接去掉，放最后保证优先级最高  -->
+                                                <DataTrigger Binding="{Binding IsTemp}" Value="False">
+                                                    <Setter Property="Background" Value="#14496F" />
+                                                    <Setter Property="BorderBrush" Value="Transparent" />
+                                                    <Setter Property="BorderThickness" Value="1" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                </Border>
 
                                 <TextBlock
+                                    x:Name="PART_Name"
                                     Grid.Row="0"
                                     HorizontalAlignment="Center"
                                     VerticalAlignment="Center"
                                     FontFamily="{StaticResource tihei}"
                                     FontSize="14"
-                                    Foreground="#BBD9F0"
-                                    Text="{Binding Name}" />
+                                    IsHitTestVisible="False"
+                                    Text="{Binding Name}">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="#BBD9F0" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsTemp}" Value="False">
+                                                    <Setter Property="Foreground" Value="#6E8496" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
 
                                 <TextBlock
+                                    x:Name="PART_Icon"
                                     Grid.Row="1"
                                     HorizontalAlignment="Center"
                                     VerticalAlignment="Center"
                                     FontFamily="{StaticResource iconfont}"
                                     FontSize="52"
-                                    Foreground="{Binding BackgroundColor}"
-                                    Text="&#xe600;" />
+                                    IsHitTestVisible="False"
+                                    Text="&#xe600;">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="{Binding BackgroundColor}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsTemp}" Value="False">
+                                                    <Setter Property="Foreground" Value="#3C5466" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
 
                                 <!--  状态显示（在线/离线）  -->
                                 <Button
                                     Grid.Row="2"
                                     Margin="0,0,0,5"
                                     Background="Transparent"
+                                    IsHitTestVisible="False"
                                     Style="{StaticResource ItemStatus}" />
                             </Grid>
                         </Button>
+
+                        <DataTemplate.Triggers>
+                            <!--
+                                临时数据（设备还没回显过）：只把鼠标改成禁用光标，不再整体降透明度
+                                （整块半透明叠在浅色背景上就是那层"灰蒙蒙"，这里取消）
+                            -->
+                            <DataTrigger Binding="{Binding IsTemp}" Value="False">
+                                <Setter TargetName="PART_Item" Property="Cursor" Value="No" />
+                            </DataTrigger>
+                        </DataTemplate.Triggers>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>

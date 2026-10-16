@@ -10,7 +10,7 @@ namespace getway.DB.TelnetConnect
         public List<TcpClient> Clients;
         private static Dictionary<string, Dictionary<string, Object>> pool = new Dictionary<string, System.Collections.Generic.Dictionary<string, Object>>();
 
-        private static Dictionary<string, Telnet2> TelnetPool = new Dictionary<string, Telnet2>();
+        public static Dictionary<string, Telnet2> TelnetPool = new Dictionary<string, Telnet2>();
 
         public static LogTlenet log = new LogTlenet(DefaulConfig.TelnetLogPath, "telnet");
 

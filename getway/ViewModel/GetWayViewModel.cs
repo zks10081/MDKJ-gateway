@@ -8,6 +8,7 @@ using getway.Util;
 using getway.View;
 using System.Collections.ObjectModel;
 using System.Text;
+using System.Windows;
 using System.Windows.Input;
 
 namespace getway.ViewModel
@@ -79,6 +80,11 @@ namespace getway.ViewModel
         public IpcItemViewModel IpcItemVM { get; }
 
         private readonly Random _random = new Random();
+        public bool IsSwitch = false;
+        private bool _isRollingBack;
+        // 已有一次回滚排在队列里：连续点击不同网关时不重复回滚、不堆弹窗
+        private bool _rollbackPending;
+        public string oldIP;
 
         private string _GetWayIp = string.Empty;
 
@@ -87,14 +93,51 @@ namespace getway.ViewModel
             get => _GetWayIp;
             set
             {
+                AppendLog($"----------------------------------------------------------");
+                AppendLog($"网关切换：{_GetWayIp} => {value},当前网关状态：{IsSwitch}");
+                if (_isRollingBack)
+                {
+                    AppendLog($"网关回滚中。。。。。");
+                    SetProperty(ref _GetWayIp, value, true);
+                    return;
+                }
+
+                if (IsSwitch)
+                {
+                    AppendLog($"网关正在切换，回退到 {oldIP}");
+
+                    if (_rollbackPending) return;
+                    _rollbackPending = true;
+
+                    _GetWayIp = value;
+
+                    Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        _isRollingBack = true;
+                        GetWayIp = oldIP;
+                        GetWayItem = GetIpModel(oldIP);   // SelectedItem 一并同步
+                        _isRollingBack = false;
+                        _rollbackPending = false;
+
+                        MessageView.ShowWaring("还有未完成的操作！");
+                    }));
+
+                    return;
+                }
+
                 if (SetProperty(ref _GetWayIp, value) && !string.IsNullOrEmpty(value))
                 {
+                    oldIP = value;
+                    AppendLog($"网关回切换成功。。。。。");
                     DefaulConfig.GetwayIp = value;
                     GetWayItem = GetIpModel(value);
                     _ = SwitchGetWayAsync(value);
+
                 }
+
             }
         }
+
 
         private int _SipInfoSide;
         public int SipInfoSide
@@ -194,6 +237,8 @@ namespace getway.ViewModel
         /// <returns></returns>
         private async Task InitAsync()
         {
+            string oldIP1 = GetWayIp;
+            GetWayList = new ObservableCollection<GetWayModel>();
             try
             {
                 GetWayList = new ObservableCollection<GetWayModel>(await Task.Run(GetWayDB.QueryGetWayList));
@@ -213,7 +258,8 @@ namespace getway.ViewModel
             }
 
             // 赋值即触发切换，保证列表高亮与已连网关始终一致
-            //GetWayIp = first.IP;
+            //    GetWayIp = first.IP;
+            GetWayIp = "-1";
         }
 
         /// <summary>
@@ -221,6 +267,7 @@ namespace getway.ViewModel
         /// </summary>
         private async Task SwitchGetWayAsync(string ip)
         {
+            IsSwitch = true;//查询状态
             _switchCts?.Cancel();
             _switchCts?.Dispose();
 
@@ -234,21 +281,31 @@ namespace getway.ViewModel
             {
                 //清空连接池
                 TcpConnect.CloseAll();
-                //终止所有查询
-                IpcItemVM.InitQueryTag();
-                IpcItemVM.InitFirst();//初始化状态回显
                 //板卡和sip都恢复默认状态
                 IpcItemVM.SelectBorder = null;
+                IpcItemVM.SetIsBorder(false);
                 IpcItemVM.SelectFlag(null);
+                IpcItemVM.TempBorderInfo();
 
                 //调整显示
                 InitShow();
                 GetwayShow = "Visible";
 
+                //更新ip相关信息
+                IpcItemVM.SetIp(ip);
+                _currentKey = key;
+                DefaulConfig.Now_Telnet_key = key;
+
+                if (ip == "-1")
+                {
+                    IsSwitch = false;
+                    return;
+                }
                 var connectTask = Task.Run(() => TcpConnect.AddTelnet(key, ip, DefaulConfig.BaseUsername, DefaulConfig.BasePassword, true));
                 if (await Task.WhenAny(connectTask, Task.Delay(ConnectTimeoutMs)) != connectTask)
                 {
                     if (!cts.IsCancellationRequested) AppendLog($"网关 {ip} 连接超时");
+                    IsSwitch = false;
                     return;
                 }
 
@@ -258,12 +315,10 @@ namespace getway.ViewModel
                 if (telnet2 == null)
                 {
                     AppendLog($"网关 {ip} 连接失败");
+                    IsSwitch = false;
                     return;
                 }
 
-                IpcItemVM.SetIp(ip);
-                _currentKey = key;
-                DefaulConfig.Now_Telnet_key = key;
 
                 var refreshTask = IpcItemVM.RefreshAllAsync(cts.Token);
                 if (await Task.WhenAny(refreshTask, Task.Delay(QueryTimeoutMs)) == refreshTask)
@@ -273,6 +328,7 @@ namespace getway.ViewModel
                 if (cts.IsCancellationRequested) return;
 
                 AppendLog($"网关 {ip} 已连接：板卡 {IpcItemVM.BorderList.Count} 个，SIP 用户 {IpcItemVM.IpcUserList.Count} 个");
+                IsSwitch = false;
             }
             catch (Exception ex)
             {
@@ -305,8 +361,18 @@ namespace getway.ViewModel
             //if (!IsConnected()) return;
             //IpcItemVM.RefreshIpcAsync();
             // 该方法内部有 Thread.Sleep 等待回显，放到线程池跑，不要把 UI 线程卡住
-            await Task.Run(() => IpcItemVM.selectSipUserCallStatus());
+            //await Task.Run(() => IpcItemVM.selectSipUserCallStatus());
             //await Task.Run(() => IpcItemVM.SelectSipUserHotline());
+
+            //GetWayIp = "192.168.1.221";
+            _readContent.Clear();
+            OnPropertyChanged(nameof(ReadContent));
+
+            //foreach (IpcUserModel model in IpcItemVM.IpcUserList)
+            //{
+            //    string status = _random.Next(2).ToString();
+            //    model.IsTemp = status == "1";
+            //}
         }
 
         //任意命令
@@ -369,10 +435,7 @@ namespace getway.ViewModel
 
         public void RefreshGetway(object paramter)
         {
-            string temp_ip = GetWayIp;
-            GetWayIp = "";
             InitAsync();
-            GetWayIp = temp_ip;
         }
 
         public void DeleteGetway(object paramter)
